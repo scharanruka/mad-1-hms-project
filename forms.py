@@ -1,6 +1,6 @@
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAreaField
+from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAreaField, BooleanField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
 from models import User # to check for existing usernames
 
@@ -32,30 +32,9 @@ class RegistrationForm(FlaskForm):
         if user:
             raise ValidationError('That username is already taken. Please choose another.')
 
-# --- FORMS FOR FUTURE MILESTONES ---
-# We can define them now since we're here.
 
-class AddDoctorForm(FlaskForm):
-    """Form for Admin to add a new Doctor."""
-    name = StringField('Full Name', validators=[DataRequired(), Length(min=2, max=100)])
-    username = StringField('Username', validators=[DataRequired(), Length(min=4, max=150)])
-    password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
-    # We will populate the 'choices' for this field in our route
-    department = SelectField('Department', coerce=int, validators=[DataRequired()])
-    submit = SubmitField('Add Doctor')
 
-    def validate_username(self, username):
-        """Check if username already exists."""
-        user = User.query.filter_by(username=username.data).first()
-        if user:
-            raise ValidationError('That username is already taken.')
 
-class EditDoctorForm(FlaskForm):
-    """Form for Admin to edit an existing Doctor."""
-    name = StringField('Full Name', 
-                       validators=[DataRequired(), Length(min=2, max=100)])
-    department = SelectField('Department', coerce=int, validators=[DataRequired()])
-    submit = SubmitField('Update Doctor')
 
 class EditPatientForm(FlaskForm):
     """Form for Admin to edit an existing Patient."""
@@ -80,3 +59,58 @@ class UpdateTreatmentForm(FlaskForm):
     diagnosis = TextAreaField('Diagnosis', validators=[DataRequired()])
     prescription = TextAreaField('Prescription', validators=[DataRequired()])
     submit = SubmitField('Save Treatment')
+
+
+
+
+# Doctor Forms ------------
+
+class AddDoctorForm(FlaskForm):
+    """Form for Admin to add a new Doctor."""
+    name = StringField('Full Name', validators=[DataRequired(), Length(min=2, max=100)])
+    username = StringField('Username', validators=[DataRequired(), Length(min=4, max=150)])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
+    # We will populate the 'choices' for this field in our route
+    department = SelectField('Department', coerce=int, validators=[DataRequired()])
+    submit = SubmitField('Add Doctor')
+
+    def validate_username(self, username):
+        """Check if username already exists."""
+        user = User.query.filter_by(username=username.data).first()
+        if user:
+            raise ValidationError('That username is already taken.')
+
+class EditDoctorForm(FlaskForm):
+    """Form for Admin to edit an existing Doctor."""
+    name = StringField('Full Name', 
+                       validators=[DataRequired(), Length(min=2, max=100)])
+    department = SelectField('Department', coerce=int, validators=[DataRequired()])
+    submit = SubmitField('Update Doctor')
+
+class UpdateAvailabilityForm(FlaskForm):
+    """
+    A form with 14 checkboxes for the next 7 days, 2 slots per day.
+    We use 'day0_am', 'day0_pm' as field names.
+    """
+    day0_am = BooleanField('8am - 12pm')
+    day0_pm = BooleanField('4pm - 9pm')
+    
+    day1_am = BooleanField('8am - 12pm')
+    day1_pm = BooleanField('4pm - 9pm')
+    
+    day2_am = BooleanField('8am - 12pm')
+    day2_pm = BooleanField('4pm - 9pm')
+    
+    day3_am = BooleanField('8am - 12pm')
+    day3_pm = BooleanField('4pm - 9pm')
+    
+    day4_am = BooleanField('8am - 12pm')
+    day4_pm = BooleanField('4pm - 9pm')
+    
+    day5_am = BooleanField('8am - 12pm')
+    day5_pm = BooleanField('4pm - 9pm')
+    
+    day6_am = BooleanField('8am - 12pm')
+    day6_pm = BooleanField('4pm - 9pm')
+    
+    submit = SubmitField('Update Availability')

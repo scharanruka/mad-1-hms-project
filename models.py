@@ -20,7 +20,7 @@ class Doctor(db.Model):
     department_id = db.Column(db.Integer, db.ForeignKey('department.id'), nullable=False)
     
     name = db.Column(db.String(100), nullable=False)
-    availability = db.Column(db.String(200), default="Not Set")
+    availability = db.Column(db.String(200), default='{}')
 
 
 class Patient(db.Model):

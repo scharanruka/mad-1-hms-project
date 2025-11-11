@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Update Your Availability</h1>
+    <p>Select the time slots you will be available for the next 7 days.</p>
+
+    <form method="POST" action="" novalidate>
+        {{ form.hidden_tag() }}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Day</th>
+                    <th>Date</th>
+                    <th>Morning (8am - 12pm)</th>
+                    <th>Evening (4pm - 9pm)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in range(7) %}
+                <tr>
+                    <td>Day {{ i }}</td>
+                    <td><strong>{{ days[i] }}</strong></td>
+                    
+                    <td>{{ form['day' + i|string + '_am'](class="form-check-input") }}</td>
+                    <td>{{ form['day' + i|string + '_pm'](class="form-check-input") }}</td>
+
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div class="mb-3">
+            {{ form.submit(class="btn btn-primary") }}
+            <a href="{{ url_for('doctor_dashboard') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+{% endblock %}
