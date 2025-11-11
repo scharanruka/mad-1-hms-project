@@ -1,0 +1,1 @@
+# A Hospital Management System for the MAD-I course project.
