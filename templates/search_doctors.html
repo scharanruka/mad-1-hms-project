@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1 class="my-4">Doctor Search Results for "{{ query }}"</h1>
+    <a href="{{ url_for('patient_dashboard') }}" class="btn btn-secondary mb-3">&larr; Back to Dashboard</a>
+
+    {% if not results %}
+        <p>No doctors found matching your search. Try a different name or specialization.</p>
+    {% else %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Doctor Name</th>
+                    <th>Specialization</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doctor, department in results %}
+                <tr>
+                    <td>Dr. {{ doctor.name }}</td>
+                    <td>{{ department.name }}</td>
+                    <td>
+                        <a href="{{ url_for('book_appointment', doctor_id=doctor.id) }}" class="btn btn-success">
+                            Book Appointment
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}

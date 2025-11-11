@@ -114,3 +114,32 @@ class UpdateAvailabilityForm(FlaskForm):
     day6_pm = BooleanField('4pm - 9pm')
     
     submit = SubmitField('Update Availability')
+
+
+
+# PATIENT DASHBOARD -----------------------------------------------------------
+class UpdatePatientProfileForm(FlaskForm):
+    """Form for Patient to update their own profile."""
+    name = StringField('Full Name', 
+                       validators=[DataRequired(), Length(min=2, max=100)])
+    contact = StringField('Contact', 
+                          validators=[DataRequired()])
+    submit = SubmitField('Update Profile')
+
+
+class SearchDoctorForm(FlaskForm):
+    """Simple search form."""
+    query = StringField('Search by Name or Specialization', 
+                        validators=[DataRequired()])
+    submit = SubmitField('Search')
+
+
+class BookAppointmentForm(FlaskForm):
+    """
+    Form for Patient to book an appointment.
+    The choices will be populated dynamically from the route.
+    """
+    # This value will be something like "2025-11-12 am"
+    appointment_slot = SelectField('Select an Available Slot', 
+                                   validators=[DataRequired()])
+    submit = SubmitField('Book Appointment')

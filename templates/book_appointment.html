@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Book Appointment with Dr. {{ doctor.name }}</h2>
+
+    {% if not has_slots %}
+        <div class="alert alert-warning">
+            This doctor has no available slots in the next 7 days. Please check back later.
+        </div>
+        <a href="{{ url_for('patient_dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+    {% else %}
+        <form method="POST" action="" novalidate>
+            {{ form.hidden_tag() }}
+            
+            <div class="mb-3">
+                {{ form.appointment_slot.label(class="form-label") }}
+                {{ form.appointment_slot(class="form-select") }}
+                {% for error in form.appointment_slot.errors %}
+                    <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </div>
+            
+            <div class="mb-3">
+                {{ form.submit(class="btn btn-success") }}
+                <a href="{{ url_for('patient_dashboard') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    {% endif %}
+{% endblock %}

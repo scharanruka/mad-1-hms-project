@@ -7,12 +7,13 @@ from models import db, User, Department, Doctor, Patient, Appointment, Treatment
 # Forms
 from forms import (LoginForm, RegistrationForm, AddDoctorForm,
  BookAppointmentForm, UpdateTreatmentForm, EditPatientForm, EditDoctorForm,
- UpdateTreatmentForm, UpdateAvailabilityForm)
+ UpdateTreatmentForm, UpdateAvailabilityForm, UpdatePatientProfileForm, SearchDoctorForm)
 
 import os
 
 import json
 from datetime import date, timedelta
+from sqlalchemy import or_
 
 app = Flask(__name__)
 
@@ -503,20 +504,283 @@ def patient_history(patient_id):
 # ------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------
+# PATIENT DASHBOARD ----------
 
+# app.py
 
-@app.route('/patient/dashboard')
+# 1. --- REPLACE THE EXISTING PATIENT DASHBOARD ROUTE ---
+@app.route('/patient/dashboard', methods=['GET', 'POST'])
 def patient_dashboard():
     # --- SIMPLE AUTH CHECK ---
-    if 'user_id' not in session:
-        flash('Please log in to access this page.')
+    if 'user_id' not in session or session.get('role') != 'patient':
+        flash('Please log in as a patient.')
         return redirect(url_for('login'))
-
-    if session.get('role') != 'patient':
-        flash('You do not have permission to access this page.')
-        return redirect(url_for('dashboard'))
     # --- END OF CHECK ---
-    return render_template('patient_dashboard.html')
+
+    patient = Patient.query.filter_by(user_id=session['user_id']).first()
+    search_form = SearchDoctorForm()
+
+    # Handle the search form submission
+    if search_form.validate_on_submit():
+        query = search_form.query.data
+        return redirect(url_for('patient_search_doctors', query=query))
+
+    # --- Get Upcoming Appointments ---
+    upcoming_appts_query = db.session.query(Appointment, Doctor).join(
+        Doctor, Appointment.doctor_id == Doctor.id
+    ).filter(
+        Appointment.patient_id == patient.id,
+        Appointment.status == 'Booked'
+    ).all()
+
+    # --- Get Past Appointments ---
+    past_appts_query = db.session.query(Appointment, Doctor).join(
+        Doctor, Appointment.doctor_id == Doctor.id
+    ).filter(
+        Appointment.patient_id == patient.id,
+        or_(Appointment.status == 'Completed', Appointment.status == 'Cancelled')
+    ).all()
+    
+    # Get treatment info for completed appointments
+    past_app_data = []
+    for appt, doctor in past_appts_query:
+        treatment = None
+        if appt.status == 'Completed':
+            treatment = Treatment.query.filter_by(appointment_id=appt.id).first()
+        past_app_data.append({
+            'appointment': appt,
+            'doctor_name': doctor.name,
+            'treatment': treatment
+        })
+
+    return render_template(
+        'patient_dashboard.html', 
+        patient=patient,
+        search_form=search_form,
+        upcoming_appts=upcoming_appts_query, # These are (Appointment, Doctor) tuples
+        past_app_data=past_app_data # This is our custom list of dicts
+    )
+
+
+# 2. --- ADD NEW ROUTE: PATIENT PROFILE ---
+@app.route('/patient/profile', methods=['GET', 'POST'])
+def patient_profile():
+    # --- SIMPLE AUTH CHECK ---
+    if 'user_id' not in session or session.get('role') != 'patient':
+        flash('Please log in as a patient.')
+        return redirect(url_for('login'))
+    # --- END OF CHECK ---
+
+    patient = Patient.query.filter_by(user_id=session['user_id']).first()
+    # `obj=patient` pre-populates the form with the patient's current data
+    form = UpdatePatientProfileForm(obj=patient)
+
+    if form.validate_on_submit():
+        patient.name = form.name.data
+        patient.contact = form.contact.data
+        db.session.commit()
+        flash('Profile updated successfully.')
+        return redirect(url_for('patient_profile'))
+
+    return render_template('patient_profile.html', form=form, patient=patient)
+
+
+# 3. --- ADD NEW ROUTE: SEARCH DOCTORS ---
+@app.route('/patient/search')
+def patient_search_doctors():
+    # --- SIMPLE AUTH CHECK ---
+    if 'user_id' not in session or session.get('role') != 'patient':
+        flash('Please log in as a patient.')
+        return redirect(url_for('login'))
+    # --- END OF CHECK ---
+
+    query = request.args.get('query')
+    if not query:
+        return redirect(url_for('patient_dashboard'))
+
+    # Search in both Doctor name and Department name
+    # We join Doctor with Department to get the department's name
+    search_results = db.session.query(Doctor, Department).join(
+        Department, Doctor.department_id == Department.id
+    ).filter(
+        or_(
+            Doctor.name.contains(query),
+            Department.name.contains(query)
+        )
+    ).all() # This gives a list of (Doctor, Department) tuples
+
+    return render_template('search_doctors.html', results=search_results, query=query)
+
+
+# 4. --- ADD NEW ROUTE: BOOK APPOINTMENT ---
+@app.route('/patient/book/<int:doctor_id>', methods=['GET', 'POST'])
+def book_appointment(doctor_id):
+    # --- SIMPLE AUTH CHECK ---
+    if 'user_id' not in session or session.get('role') != 'patient':
+        flash('Please log in as a patient.')
+        return redirect(url_for('login'))
+    # --- END OF CHECK ---
+
+    doctor = Doctor.query.get_or_404(doctor_id)
+    form = BookAppointmentForm()
+
+    # --- Generate available slots ---
+    # Load the doctor's availability from the JSON string
+    avail_dict = json.loads(doctor.availability or '{}')
+    
+    # Get existing appointments for this doctor to check for conflicts
+    existing_appts = Appointment.query.filter_by(doctor_id=doctor.id).all()
+    # Create a set of "YYYY-MM-DD am" or "YYYY-MM-DD pm" strings for fast lookup
+    booked_slots = {f"{appt.appointment_date}" for appt in existing_appts}
+
+    slot_choices = []
+    today = date.today()
+    for i in range(7): # For the next 7 days
+        day = today + timedelta(days=i)
+        day_str = day.strftime('%Y-%m-%d')
+        
+        if day_str in avail_dict:
+            # Check AM slot
+            if 'am' in avail_dict[day_str]:
+                slot_id = f"{day_str} am" # e.g., "2025-11-12 am"
+                if slot_id not in booked_slots:
+                    label = f"{day_str} (Morning: 8am-12pm)"
+                    slot_choices.append((slot_id, label))
+            # Check PM slot
+            if 'pm' in avail_dict[day_str]:
+                slot_id = f"{day_str} pm" # e.g., "2025-11-12 pm"
+                if slot_id not in booked_slots:
+                    label = f"{day_str} (Evening: 4pm-9pm)"
+                    slot_choices.append((slot_id, label))
+    
+    form.appointment_slot.choices = slot_choices
+
+    if form.validate_on_submit():
+        selected_slot = form.appointment_slot.data
+        patient = Patient.query.filter_by(user_id=session['user_id']).first()
+
+        # Final check just in case
+        if selected_slot in booked_slots:
+            flash('This slot was just booked. Please select another.')
+            return redirect(url_for('book_appointment', doctor_id=doctor_id))
+
+        # Create the new appointment
+        new_appt = Appointment(
+            patient_id=patient.id,
+            doctor_id=doctor.id,
+            appointment_date=selected_slot,
+            status='Booked'
+        )
+        db.session.add(new_appt)
+        db.session.commit()
+
+        flash('Appointment booked successfully!')
+        return redirect(url_for('patient_dashboard'))
+
+    return render_template(
+        'book_appointment.html', 
+        form=form, 
+        doctor=doctor,
+        has_slots=(len(slot_choices) > 0)
+    )
+
+
+# 5. --- ADD NEW ROUTE: CANCEL APPOINTMENT ---
+@app.route('/patient/cancel/<int:app_id>')
+def patient_cancel_appointment(app_id):
+    # --- SIMPLE AUTH CHECK ---
+    if 'user_id' not in session or session.get('role') != 'patient':
+        flash('Please log in as a patient.')
+        return redirect(url_for('login'))
+    # --- END OF CHECK ---
+
+    patient = Patient.query.filter_by(user_id=session['user_id']).first()
+    appointment = Appointment.query.get_or_404(app_id)
+
+    # Check that this patient owns this appointment
+    if appointment.patient_id != patient.id:
+        flash('You do not have permission to cancel this appointment.')
+        return redirect(url_for('patient_dashboard'))
+
+    # Only 'Booked' appointments can be cancelled
+    if appointment.status == 'Booked':
+        appointment.status = 'Cancelled'
+        db.session.commit()
+        flash('Appointment cancelled successfully.')
+    else:
+        flash('This appointment cannot be cancelled.')
+
+    return redirect(url_for('patient_dashboard'))
+
+
+# 6. --- ADD NEW ROUTE: RESCHEDULE APPOINTMENT ---
+@app.route('/patient/reschedule/<int:app_id>', methods=['GET', 'POST'])
+def patient_reschedule_appointment(app_id):
+    # --- SIMPLE AUTH CHECK ---
+    if 'user_id' not in session or session.get('role') != 'patient':
+        flash('Please log in as a patient.')
+        return redirect(url_for('login'))
+    # --- END OF CHECK ---
+
+    patient = Patient.query.filter_by(user_id=session['user_id']).first()
+    appointment = Appointment.query.get_or_404(app_id)
+    doctor = Doctor.query.get(appointment.doctor_id)
+
+    # Check ownership and status
+    if appointment.patient_id != patient.id or appointment.status != 'Booked':
+        flash('This appointment cannot be rescheduled.')
+        return redirect(url_for('patient_dashboard'))
+    
+    # We can reuse the BookAppointmentForm
+    form = BookAppointmentForm()
+    form.submit.label.text = 'Reschedule' # Change button text
+
+    # --- Generate available slots (same logic as booking) ---
+    avail_dict = json.loads(doctor.availability or '{}')
+    existing_appts = Appointment.query.filter_by(doctor_id=doctor.id).all()
+    
+    # Create set of booked slots, BUT *exclude* the current appointment
+    booked_slots = {
+        f"{appt.appointment_date}" for appt in existing_appts 
+        if appt.id != appointment.id # Allow picking the *same* slot
+    }
+    
+    slot_choices = []
+    today = date.today()
+    for i in range(7):
+        day = today + timedelta(days=i)
+        day_str = day.strftime('%Y-%m-%d')
+        if day_str in avail_dict:
+            if 'am' in avail_dict[day_str]:
+                slot_id = f"{day_str} am"
+                if slot_id not in booked_slots:
+                    label = f"{day_str} (Morning: 8am-12pm)"
+                    slot_choices.append((slot_id, label))
+            if 'pm' in avail_dict[day_str]:
+                slot_id = f"{day_str} pm"
+                if slot_id not in booked_slots:
+                    label = f"{day_str} (Evening: 4pm-9pm)"
+                    slot_choices.append((slot_id, label))
+    
+    form.appointment_slot.choices = slot_choices
+
+    if form.validate_on_submit():
+        new_slot = form.appointment_slot.data
+        
+        # Update the appointment
+        appointment.appointment_date = new_slot
+        db.session.commit()
+        
+        flash('Appointment rescheduled successfully!')
+        return redirect(url_for('patient_dashboard'))
+
+    return render_template(
+        'reschedule_appointment.html',
+        form=form,
+        doctor=doctor,
+        appointment=appointment,
+        has_slots=(len(slot_choices) > 0)
+    )
 
 
 # 2. --- ADD THE 'ADD_DOCTOR' ROUTE ---
