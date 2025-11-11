@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1 class="my-4">Appointment Details</h1>
+
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary mb-3">&larr; Back to Admin Dashboard</a>
+
+    <div class="card">
+        <div class="card-header">
+            <h4>Appointment Summary</h4>
+        </div>
+        <div class="card-body">
+            <p><strong>Status:</strong> 
+                <span class="badge 
+                    {% if appointment.status == 'Completed' %}bg-success
+                    {% elif appointment.status == 'Cancelled' %}bg-danger
+                    {% else %}bg-primary
+                    {% endif %}
+                ">{{ appointment.status }}</span>
+            </p>
+            <p><strong>Date & Time:</strong> {{ appointment.appointment_date }}</p>
+            <p><strong>Patient:</strong> {{ patient.name }} (ID: {{ patient.id }})</p>
+            <p><strong>Doctor:</strong> Dr. {{ doctor.name }} (ID: {{ doctor.id }})</p>
+        </div>
+    </div>
+
+    {% if treatment %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h4>Treatment Record</h4>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Diagnosis</h5>
+                <p class="card-text">{{ treatment.diagnosis }}</p>
+                <hr>
+                <h5 class="card-title">Prescription</h5>
+                <p class="card-text">{{ treatment.prescription }}</p>
+            </div>
+        </div>
+    {% elif appointment.status == 'Booked' %}
+        <div class="alert alert-info mt-4">
+            This appointment is still booked. No treatment has been recorded.
+        </div>
+    {% elif appointment.status == 'Cancelled' %}
+        <div class="alert alert-danger mt-4">
+            This appointment was cancelled.
+        </div>
+    {% endif %}
+
+{% endblock %}

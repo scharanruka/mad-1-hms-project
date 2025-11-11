@@ -79,7 +79,7 @@
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th>Username</th>
+                        <!-- <th>Username</th> -->
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -88,7 +88,7 @@
                     {% for doctor, user in doctors %}
                     <tr>
                         <td>{{ doctor.name }}</td>
-                        <td>{{ user.username }}</td>
+                        <!-- <td>{{ user.username }}</td> -->
                         <td>
                             <span class="{{ 'text-success' if user.status == 'active' else 'text-danger' }}">
                                 {{ user.status }}
@@ -168,7 +168,7 @@
 
     <div class="row mt-4">
         <div class="col-12">
-            <h3>Upcoming Appointments</h3>
+            <h3>All Appointments ({{ appointment_count }})</h3>
             <table class="table table-striped">
                 <thead>
                     <tr>
@@ -176,7 +176,7 @@
                         <th>Doctor ID</th>
                         <th>Date & Time</th>
                         <th>Status</th>
-                    </tr>
+                        <th>Actions</th> </tr>
                 </thead>
                 <tbody>
                     {% for appt in appointments %}
@@ -185,9 +185,9 @@
                         <td>{{ appt.doctor_id }}</td>
                         <td>{{ appt.appointment_date }}</td>
                         <td>
-                            <span class_="{{ 'text-success' if appt.status == 'Completed' else 'text-danger' if appt.status == 'Cancelled' else 'text-primary' }}">
-                                {{ appt.status }}
-                            </span>
+                            <a href="{{ url_for('admin_view_treatment', app_id=appt.id) }}" class="btn btn-info btn-sm">
+                                View
+                            </a>
                         </td>
                     </tr>
                     {% endfor %}

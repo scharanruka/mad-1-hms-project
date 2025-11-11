@@ -685,7 +685,7 @@ def book_appointment(doctor_id):
     )
 
 
-# 5. --- ADD NEW ROUTE: CANCEL APPOINTMENT ---
+#  --- ADD NEW ROUTE: CANCEL APPOINTMENT ---
 @app.route('/patient/cancel/<int:app_id>')
 def patient_cancel_appointment(app_id):
     # --- SIMPLE AUTH CHECK ---
@@ -713,7 +713,7 @@ def patient_cancel_appointment(app_id):
     return redirect(url_for('patient_dashboard'))
 
 
-# 6. --- ADD NEW ROUTE: RESCHEDULE APPOINTMENT ---
+#  --- ADD NEW ROUTE: RESCHEDULE APPOINTMENT ---
 @app.route('/patient/reschedule/<int:app_id>', methods=['GET', 'POST'])
 def patient_reschedule_appointment(app_id):
     # --- SIMPLE AUTH CHECK ---
@@ -783,7 +783,7 @@ def patient_reschedule_appointment(app_id):
     )
 
 
-# 2. --- ADD THE 'ADD_DOCTOR' ROUTE ---
+#  --- ADD THE 'ADD_DOCTOR' ROUTE ---
 
 @app.route('/admin/add_doctor', methods=['POST'])
 def add_doctor():
@@ -845,7 +845,7 @@ def add_doctor():
     return redirect(url_for('admin_dashboard'))
 
 
-# 3. --- ADD THE 'REMOVE_USER' ROUTE ---
+#  --- ADD THE 'REMOVE_USER' ROUTE ---
 
 @app.route('/admin/remove_user/<int:user_id>')
 def remove_user(user_id):
@@ -891,7 +891,7 @@ def remove_user(user_id):
     flash(f'User {user_to_delete.username} has been removed.')
     return redirect(url_for('admin_dashboard'))
 
-# 4. --- ADD THE 'ADMIN_SEARCH' ROUTE ---
+#  --- ADD THE 'ADMIN_SEARCH' ROUTE ---
 
 @app.route('/admin/search')
 def admin_search():
@@ -920,6 +920,30 @@ def admin_search():
         patients=patients, 
         doctors=doctors, 
         query=query
+    )
+
+@app.route('/admin/view_treatment/<int:app_id>')
+def admin_view_treatment(app_id):
+    # --- SIMPLE AUTH CHECK ---
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('You do not have permission.')
+        return redirect(url_for('login'))
+    # --- END OF CHECK ---
+
+    # Get all details for this one appointment
+    appointment = Appointment.query.get_or_404(app_id)
+    patient = Patient.query.get(appointment.patient_id)
+    doctor = Doctor.query.get(appointment.doctor_id)
+    treatment = Treatment.query.filter_by(appointment_id=app_id).first()
+
+    # treatment will be None if the status isn't 'Completed'
+    
+    return render_template(
+        'admin_view_treatment.html',
+        appointment=appointment,
+        patient=patient,
+        doctor=doctor,
+        treatment=treatment
     )
 
 
