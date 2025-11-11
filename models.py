@@ -7,6 +7,7 @@ class User(db.Model):
     username = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(150), nullable=False)
     role = db.Column(db.String(50), nullable=False) # 'admin', 'doctor', 'patient'
+    status = db.Column(db.String(50), nullable=False, default='active') # active, blacklisted
 
 class Department(db.Model):
     id = db.Column(db.Integer, primary_key=True)

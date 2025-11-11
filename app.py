@@ -5,14 +5,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, Department, Doctor, Patient, Appointment, Treatment
 
 # Forms
-from forms import LoginForm, RegistrationForm, AddDoctorForm, BookAppointmentForm, UpdateTreatmentForm
+from forms import (LoginForm, RegistrationForm, AddDoctorForm,
+ BookAppointmentForm, UpdateTreatmentForm, EditPatientForm, EditDoctorForm)
 
 import os
 
 app = Flask(__name__)
 
 # Configure the database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///hospital.sqlite'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///hospital.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'mysecretkey'
 
@@ -31,7 +32,8 @@ def create_db_and_admin():
                     admin_user = User(
                         username='admin', 
                         password=hashed_password, 
-                        role='admin'
+                        role='admin',
+                        status='active'
                     )
                     
                     # Add to the session and commit
@@ -193,7 +195,112 @@ def admin_dashboard():
         # Send them back to their own dashboard
         return redirect(url_for('dashboard'))
     # --- END OF CHECK ---
-    return render_template('admin_dashboard.html')
+
+    # Get stats for the dashboard
+    doctor_count = Doctor.query.count()
+    patient_count = Patient.query.count()
+    appointment_count = Appointment.query.count()
+
+    # Get lists for management
+    # doctors = Doctor.query.all()
+    doctors = db.session.query(Doctor, User).join(User, Doctor.user_id == User.id).all()
+    # patients = Patient.query.all()
+    patients = db.session.query(Patient, User).join(User, Patient.user_id == User.id).all()
+    appointments = Appointment.query.all()
+    departments = Department.query.all()
+
+    form = AddDoctorForm()
+    form.department.choices = [(d.id, d.name) for d in departments]
+
+    return render_template(
+        'admin_dashboard.html',
+        doctor_count=doctor_count,
+        patient_count=patient_count,
+        appointment_count=appointment_count,
+        doctors=doctors, # (Doctor, User)
+        patients=patients, # (Patient, User)
+        appointments=appointments,
+        form=form  # pass the form to the template
+    )
+
+@app.route('/admin/edit_doctor/<int:doctor_id>', methods=['GET', 'POST'])
+def edit_doctor(doctor_id):
+    # --- SIMPLE AUTH CHECK ---
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('You do not have permission.')
+        return redirect(url_for('login'))
+    # --- END OF CHECK ---
+
+    doctor = Doctor.query.get_or_404(doctor_id)
+    # `obj=doctor` pre-populates the form with the doctor's current data
+    form = EditDoctorForm(obj=doctor)
+    
+    # Populate department choices
+    form.department.choices = [(d.id, d.name) for d in Department.query.all()]
+    
+    if form.validate_on_submit():
+        # Update the doctor's data
+        doctor.name = form.name.data
+        doctor.department_id = form.department.data
+        db.session.commit()
+        flash('Doctor details updated successfully.')
+        return redirect(url_for('admin_dashboard'))
+
+    # On a GET request, pre-select the doctor's current department
+    if request.method == 'GET':
+        form.department.data = doctor.department_id
+
+    return render_template('edit_doctor.html', form=form, doctor=doctor)
+
+
+@app.route('/admin/edit_patient/<int:patient_id>', methods=['GET', 'POST'])
+def edit_patient(patient_id):
+    # --- SIMPLE AUTH CHECK ---
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('You do not have permission.')
+        return redirect(url_for('login'))
+    # --- END OF CHECK ---
+
+    patient = Patient.query.get_or_404(patient_id)
+    # `obj=patient` pre-populates the form
+    form = EditPatientForm(obj=patient)
+    
+    if form.validate_on_submit():
+        patient.name = form.name.data
+        patient.contact = form.contact.data
+        db.session.commit()
+        flash('Patient details updated successfully.')
+        return redirect(url_for('admin_dashboard'))
+
+    return render_template('edit_patient.html', form=form, patient=patient)
+
+
+@app.route('/admin/toggle_blacklist/<int:user_id>')
+def toggle_blacklist(user_id):
+    # --- SIMPLE AUTH CHECK ---
+    if 'user_id' not in session or session.get('role') != 'admin':
+        flash('You do not have permission.')
+        return redirect(url_for('login'))
+    # --- END OF CHECK ---
+
+    user = User.query.get_or_404(user_id)
+
+    # Prevent admin from blacklisting themselves or other admins
+    if user.role == 'admin':
+        flash('You cannot blacklist an admin account.')
+        return redirect(url_for('admin_dashboard'))
+    
+    # Toggle the status
+    if user.status == 'active':
+        user.status = 'blacklisted'
+        flash(f'User {user.username} has been blacklisted.')
+    else:
+        user.status = 'active'
+        flash(f'User {user.username} has been activated.')
+        
+    db.session.commit()
+    return redirect(url_for('admin_dashboard'))
+
 
 @app.route('/doctor/dashboard')
 def doctor_dashboard():
@@ -223,9 +330,144 @@ def patient_dashboard():
     return render_template('patient_dashboard.html')
 
 
+# 2. --- ADD THE 'ADD_DOCTOR' ROUTE ---
+
+@app.route('/admin/add_doctor', methods=['POST'])
+def add_doctor():
+    # --- SIMPLE AUTH CHECK ---
+    if 'user_id' not in session:
+        flash('Please log in to access this page.')
+        return redirect(url_for('login'))
+    if session.get('role') != 'admin':
+        flash('You do not have permission to access this page.')
+        return redirect(url_for('dashboard'))
+    # --- END OF CHECK ---
+
+    form = AddDoctorForm()
+    
+    # We must populate choices *again* here, in case validation fails
+    # and we need to re-render the dashboard.
+    departments = Department.query.all()
+    form.department.choices = [(d.id, d.name) for d in departments]
+
+    if form.validate_on_submit():
+        # Get data from the form
+        name = form.name.data
+        username = form.username.data
+        password = form.password.data
+        dept_id = form.department.data
+
+        # Check if username already exists
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            flash('Username already exists. Please choose another.')
+            return redirect(url_for('admin_dashboard'))
+
+        # Create the new User for the doctor
+        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+        new_user = User(
+            username=username,
+            password=hashed_password,
+            role='doctor'
+        )
+        db.session.add(new_user)
+        db.session.commit() # Commit to get the new_user.id
+
+        # Create the associated Doctor profile
+        new_doctor = Doctor(
+            name=name,
+            department_id=dept_id,
+            user_id=new_user.id
+        )
+        db.session.add(new_doctor)
+        db.session.commit()
+
+        flash(f'Doctor {name} added successfully.')
+    else:
+        # If validation fails, flash the errors
+        for field, errors in form.errors.items():
+            for error in errors:
+                flash(f'Error in {field}: {error}')
+    
+    return redirect(url_for('admin_dashboard'))
 
 
+# 3. --- ADD THE 'REMOVE_USER' ROUTE ---
 
+@app.route('/admin/remove_user/<int:user_id>')
+def remove_user(user_id):
+    # --- SIMPLE AUTH CHECK ---
+    if 'user_id' not in session:
+        flash('Please log in to access this page.')
+        return redirect(url_for('login'))
+    if session.get('role') != 'admin':
+        flash('You do not have permission to access this page.')
+        return redirect(url_for('dashboard'))
+    # --- END OF CHECK ---
+
+    # Find the user to delete
+    user_to_delete = User.query.get(user_id)
+    if not user_to_delete:
+        flash('User not found.')
+        return redirect(url_for('admin_dashboard'))
+
+    # Prevent admin from deleting themselves
+    if user_to_delete.id == session.get('user_id'):
+        flash('You cannot remove your own admin account.')
+        return redirect(url_for('admin_dashboard'))
+
+    # Manually delete the associated profile (Doctor or Patient)
+    # This is necessary because we removed db.relationship
+    if user_to_delete.role == 'doctor':
+        doctor_profile = Doctor.query.filter_by(user_id=user_id).first()
+        if doctor_profile:
+            # You might want to handle appointments first, e.g.,
+            # Appointment.query.filter_by(doctor_id=doctor_profile.id).delete()
+            db.session.delete(doctor_profile)
+    
+    elif user_to_delete.role == 'patient':
+        patient_profile = Patient.query.filter_by(user_id=user_id).first()
+        if patient_profile:
+            # Appointment.query.filter_by(patient_id=patient_profile.id).delete()
+            db.session.delete(patient_profile)
+    
+    # Now delete the User
+    db.session.delete(user_to_delete)
+    db.session.commit()
+
+    flash(f'User {user_to_delete.username} has been removed.')
+    return redirect(url_for('admin_dashboard'))
+
+# 4. --- ADD THE 'ADMIN_SEARCH' ROUTE ---
+
+@app.route('/admin/search')
+def admin_search():
+    # --- SIMPLE AUTH CHECK ---
+    if 'user_id' not in session:
+        flash('Please log in to access this page.')
+        return redirect(url_for('login'))
+    if session.get('role') != 'admin':
+        flash('You do not have permission to access this page.')
+        return redirect(url_for('dashboard'))
+    # --- END OF CHECK ---
+
+    # Get the search query from the URL (e.g., /admin/search?query=test)
+    query = request.args.get('query')
+
+    if not query:
+        flash('Please enter a search term.')
+        return redirect(url_for('admin_dashboard'))
+
+    # Search for patients and doctors using .contains() for partial matching
+    patients = Patient.query.filter(Patient.name.contains(query)).all()
+    doctors = Doctor.query.filter(Doctor.name.contains(query)).all()
+
+    return render_template(
+        'search_results.html', 
+        patients=patients, 
+        doctors=doctors, 
+        query=query
+    )
 
 
 

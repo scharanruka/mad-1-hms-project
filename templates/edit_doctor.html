@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Edit Doctor: {{ doctor.name }}</h2>
+  
+  <form method="POST" action="" novalidate>
+    {{ form.hidden_tag() }}
+
+    <div class="mb-3">
+      {{ form.name.label(class="form-label") }}
+      {{ form.name(class="form-control") }}
+      {% for error in form.name.errors %}
+        <span style="color: red;">[{{ error }}]</span>
+      {% endfor %}
+    </div>
+
+    <div class="mb-3">
+      {{ form.department.label(class="form-label") }}
+      {{ form.department(class="form-select") }}
+      {% for error in form.department.errors %}
+        <span style="color: red;">[{{ error }}]</span>
+      {% endfor %}
+    </div>
+
+    <div class="mb-3">
+      {{ form.submit(class="btn btn-primary") }}
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+{% endblock %}

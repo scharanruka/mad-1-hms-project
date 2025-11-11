@@ -50,6 +50,23 @@ class AddDoctorForm(FlaskForm):
         if user:
             raise ValidationError('That username is already taken.')
 
+class EditDoctorForm(FlaskForm):
+    """Form for Admin to edit an existing Doctor."""
+    name = StringField('Full Name', 
+                       validators=[DataRequired(), Length(min=2, max=100)])
+    department = SelectField('Department', coerce=int, validators=[DataRequired()])
+    submit = SubmitField('Update Doctor')
+
+class EditPatientForm(FlaskForm):
+    """Form for Admin to edit an existing Patient."""
+    name = StringField('Full Name', 
+                       validators=[DataRequired(), Length(min=2, max=100)])
+    contact = StringField('Contact', 
+                          validators=[DataRequired()])
+    submit = SubmitField('Update Patient')
+
+
+
 class BookAppointmentForm(FlaskForm):
     """Form for Patient to book an appointment."""
     # Using StringField for simplicity, as requested.

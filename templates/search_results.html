@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1 class="my-4">Search Results for "{{ query }}"</h1>
+
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary mb-3">&larr; Back to Dashboard</a>
+
+    <h2>Doctors Found ({{ doctors|length }})</h2>
+    {% if doctors %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Department ID</th>
+                    <th>User ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doctor in doctors %}
+                <tr>
+                    <td>{{ doctor.name }}</td>
+                    <td>{{ doctor.department_id }}</td>
+                    <td>{{ doctor.user_id }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No doctors found matching that name.</p>
+    {% endif %}
+
+    <hr class="my-4">
+
+    <h2>Patients Found ({{ patients|length }})</h2>
+    {% if patients %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Contact</th>
+                    <th>User ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for patient in patients %}
+                <tr>
+                    <td>{{ patient.name }}</td>
+                    <td>{{ patient.contact }}</td>
+                    <td>{{ patient.user_id }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No patients found matching that name.</p>
+    {% endif %}
+
+{% endblock %}
