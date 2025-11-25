@@ -3,32 +3,57 @@
 {% block content %}
     <h1>Update Treatment</h1>
     <hr>
-    <h4>Patient: {{ patient.name }}</h4>
-    <p><strong>Appointment Date:</strong> {{ appointment.appointment_date }}</p>
+    <h4>Patient Name : {{ patient.name }}</h4>
+
+    <div>
+        <small><strong>Department:</strong> {{ department.name }}</small><br/>
+        <small><strong>Appointment Date:</strong> {{ appointment.appointment_date }}</small>
+    </div>
+
     <hr>
 
     <form method="POST" action="" novalidate>
         {{ form.hidden_tag() }}
+        <div class="container">
+            <div class="row">
+                <div class="col-sm">
+                    {{ form.visit_type.label(class="form-label") }}
+                    {{ form.visit_type(class="form-control") }}
+                    {% for error in form.diagnosis.errors %}
+                        <span style="color: red;">[{{ error }}]</span>
+                    {% endfor %}
+                </div>
+                <div class="col-sm">
+                    {{ form.test_done.label(class="form-label") }}
+                    {{ form.test_done(class="form-control") }}
+                    {% for error in form.diagnosis.errors %}
+                        <span style="color: red;">[{{ error }}]</span>
+                    {% endfor %}
+                </div>
 
-        <div class="mb-3">
-            {{ form.diagnosis.label(class="form-label") }}
-            {{ form.diagnosis(class="form-control", rows=5) }}
-            {% for error in form.diagnosis.errors %}
+            </div>
+
+            
+            <div class="mb-3">
+                {{ form.diagnosis.label(class="form-label") }}
+                {{ form.diagnosis(class="form-control", rows=2) }}
+                {% for error in form.diagnosis.errors %}
                 <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
-        </div>
-
-        <div class="mb-3">
-            {{ form.prescription.label(class="form-label") }}
-            {{ form.prescription(class="form-control", rows=5) }}
-            {% for error in form.prescription.errors %}
+                {% endfor %}
+            </div>
+            
+            <div class="mb-3">
+                {{ form.prescription.label(class="form-label") }}
+                {{ form.prescription(class="form-control", rows=2) }}
+                {% for error in form.prescription.errors %}
                 <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
-        </div>
-
-        <div class="mb-3">
-            {{ form.submit(class="btn btn-success") }}
-            <a href="{{ url_for('doctor_dashboard') }}" class="btn btn-secondary">Cancel</a>
+                {% endfor %}
+            </div>
+            
+            <div class="mb-3">
+                {{ form.submit(class="btn btn-success") }}
+                <a href="{{ url_for('doctor_dashboard') }}" class="btn btn-secondary">Cancel</a>
+            </div>
         </div>
     </form>
 {% endblock %}

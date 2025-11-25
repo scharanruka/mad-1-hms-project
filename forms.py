@@ -1,7 +1,7 @@
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAreaField, BooleanField
-from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
+from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAreaField, BooleanField, IntegerField, DateField
+from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange
 from models import User # to check for existing usernames
 
 class LoginForm(FlaskForm):
@@ -56,6 +56,10 @@ class BookAppointmentForm(FlaskForm):
 
 class UpdateTreatmentForm(FlaskForm):
     """Form for Doctor to add treatment notes."""
+    visit_type = StringField("Visit Type", default="Regular Checkup", validators=[DataRequired(), Length(min=4, max=150)])
+    test_done = StringField("Test Done", default="-", validators=[DataRequired(), Length(min=1, max=150)])
+
+
     diagnosis = TextAreaField('Diagnosis', validators=[DataRequired()])
     prescription = TextAreaField('Prescription', validators=[DataRequired()])
     submit = SubmitField('Save Treatment')
@@ -68,10 +72,13 @@ class UpdateTreatmentForm(FlaskForm):
 class AddDoctorForm(FlaskForm):
     """Form for Admin to add a new Doctor."""
     name = StringField('Full Name', validators=[DataRequired(), Length(min=2, max=100)])
-    username = StringField('Username', validators=[DataRequired(), Length(min=4, max=150)])
-    password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
-    # We will populate the 'choices' for this field in our route
+    dob = DateField('Date of Birth', format='%Y-%m-%d', validators=[DataRequired()])
+    # username = StringField('Username', validators=[DataRequired(), Length(min=4, max=150)])
+    # password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
+    specialization = StringField('Specialization', validators=[DataRequired(), Length(min=4, max=150)])
+    experience =  IntegerField('Experience', validators=[DataRequired(), NumberRange(min=0)])
     department = SelectField('Department', coerce=int, validators=[DataRequired()])
+    qualifications = StringField('Qualifications', validators=[DataRequired(), Length(min=4, max=150)])
     submit = SubmitField('Add Doctor')
 
     def validate_username(self, username):

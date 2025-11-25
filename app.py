@@ -1,4 +1,3 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -15,62 +14,23 @@ import json
 from datetime import date, timedelta
 from sqlalchemy import or_
 
+# Helper functions
+from helpers import generate_random_password, generate_username
+
 app = Flask(__name__)
 
 # Configure the database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///hospital.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'mysecretkey'
 
 db.init_app(app)
-
-def create_db_and_admin():
-    with app.app_context():
-        db.create_all()
-        # Create admin user ------------------
-        if not User.query.filter_by(username='admin').first():
-                    print("Admin user not found, creating one...")
-                    # Hash the admin's password
-                    hashed_password = generate_password_hash('admin123', method='pbkdf2:sha256')
-                    
-                    # Create the new admin user object
-                    admin_user = User(
-                        username='admin', 
-                        password=hashed_password, 
-                        role='admin',
-                        status='active'
-                    )
-                    
-                    # Add to the session and commit
-                    db.session.add(admin_user)
-                    print("Admin user created.")
-        else:
-            print("Admin user already exists.")
-        #------------------
-        # --- Create Default Departments ---
-        if not Department.query.first():
-            print("No departments found, creating defaults...")
-            default_depts = ['Cardiology', 'Neurology', 'Oncology', 'Orthopedics', 'Pediatrics']
-            
-            for dept_name in default_depts:
-                new_dept = Department(name=dept_name)
-                db.session.add(new_dept)
-                
-            print(f"Created {len(default_depts)} departments.")
-        else:
-            print("Departments already exist.")
-
-        # Commit all changes to the database
-        db.session.commit()
-        print("Database setup complete.")
-
 
 
 
 # ROUTES ------------------------------------
 @app.route('/')
 def index():
-    # Render the new homepage
     return render_template('index.html')
 
 
@@ -78,8 +38,7 @@ def index():
 # AUTH ROUTES -------------------------
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Handles login for all user roles using Flask-WTF."""
-    form = LoginForm() # Create an instance of the form
+    form = LoginForm() # WTForm
 
     if form.validate_on_submit():
         username = form.username.data
@@ -95,10 +54,7 @@ def login():
             return redirect(url_for('dashboard'))
         else:
             flash('Invalid username or password.')
-            # We don't redirect here, we let the page re-render
-            # to show the flash message.
 
-    # Pass the form to the template
     return render_template('login.html', form=form)
 
 
@@ -125,7 +81,6 @@ def register():
     # Check if the form was submitted and all validators passed
     if form.validate_on_submit():
         
-        # Get data from the form object (form.field.data)
         name = form.name.data
         contact = form.contact.data
         username = form.username.data
@@ -211,7 +166,7 @@ def admin_dashboard():
     doctors = db.session.query(Doctor, User).join(User, Doctor.user_id == User.id).all()
     # patients = Patient.query.all()
     patients = db.session.query(Patient, User).join(User, Patient.user_id == User.id).all()
-    appointments = Appointment.query.all()
+    appointments = Appointment.query.filter_by(status="Booked").all()
     departments = Department.query.all()
 
     form = AddDoctorForm()
@@ -429,7 +384,9 @@ def update_treatment(app_id):
 
     doctor = Doctor.query.filter_by(user_id=session['user_id']).first()
     appointment = Appointment.query.get_or_404(app_id)
+    department = Department.query.filter_by(id=doctor.department_id).first()
     patient = Patient.query.get(appointment.patient_id)
+
     
     # Check ownership
     if appointment.doctor_id != doctor.id:
@@ -439,6 +396,7 @@ def update_treatment(app_id):
     form = UpdateTreatmentForm()
 
     if form.validate_on_submit(): # POST request
+        print("Form validate")
         # Check if treatment already exists
         existing_treatment = Treatment.query.filter_by(appointment_id=app_id).first()
         if existing_treatment:
@@ -446,14 +404,18 @@ def update_treatment(app_id):
             existing_treatment.diagnosis = form.diagnosis.data
             existing_treatment.prescription = form.prescription.data
         else:
+            print("new")
             # Create new
             new_treatment = Treatment(
                 appointment_id=app_id,
                 diagnosis=form.diagnosis.data,
-                prescription=form.prescription.data
+                prescription=form.prescription.data,
+                visit_type=form.visit_type.data,
+                test_done=form.test_done.data
             )
             db.session.add(new_treatment)
         
+        print("Fnished")
         # Mark appointment as completed
         appointment.status = 'Completed'
         db.session.commit()
@@ -465,7 +427,8 @@ def update_treatment(app_id):
         'update_treatment.html', 
         form=form, 
         appointment=appointment,
-        patient=patient
+        patient=patient,
+        department=department
     )
 
 
@@ -785,7 +748,7 @@ def patient_reschedule_appointment(app_id):
 
 #  --- ADD THE 'ADD_DOCTOR' ROUTE ---
 
-@app.route('/admin/add_doctor', methods=['POST'])
+@app.route('/admin/add_doctor', methods=['GET','POST'])
 def add_doctor():
     # --- SIMPLE AUTH CHECK ---
     if 'user_id' not in session:
@@ -798,30 +761,33 @@ def add_doctor():
 
     form = AddDoctorForm()
     
-    # We must populate choices *again* here, in case validation fails
-    # and we need to re-render the dashboard.
+
     departments = Department.query.all()
     form.department.choices = [(d.id, d.name) for d in departments]
 
     if form.validate_on_submit():
         # Get data from the form
         name = form.name.data
-        username = form.username.data
-        password = form.password.data
+        # username = form.username.data
+        # password = form.password.data
         dept_id = form.department.data
+        specialization = form.specialization.data
+        experience = form.experience.data
+        dob = form.dob.data
+        qualifications = form.qualifications.data
 
-        # Check if username already exists
-        existing_user = User.query.filter_by(username=username).first()
-        if existing_user:
-            flash('Username already exists. Please choose another.')
-            return redirect(url_for('admin_dashboard'))
+        gen_username=  generate_username(name)
+        gen_password= generate_random_password()
+
 
         # Create the new User for the doctor
-        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+        hashed_password = generate_password_hash(gen_password, method='pbkdf2:sha256')
+
         new_user = User(
-            username=username,
+            username=gen_username,
             password=hashed_password,
             role='doctor'
+            
         )
         db.session.add(new_user)
         db.session.commit() # Commit to get the new_user.id
@@ -830,19 +796,28 @@ def add_doctor():
         new_doctor = Doctor(
             name=name,
             department_id=dept_id,
-            user_id=new_user.id
+            user_id=new_user.id,
+            dob=dob,
+            specialization=specialization,
+            experience=experience,
+            qualifications=qualifications
         )
         db.session.add(new_doctor)
         db.session.commit()
 
-        flash(f'Doctor {name} added successfully.')
+        return render_template(
+                    'doctor_credentials_success.html', 
+                    name=name,
+                    username=gen_username,
+                    password=gen_password
+                )
     else:
-        # If validation fails, flash the errors
+        # Errors
         for field, errors in form.errors.items():
             for error in errors:
                 flash(f'Error in {field}: {error}')
     
-    return redirect(url_for('admin_dashboard'))
+    return render_template('create_doctor.html', form=form)
 
 
 #  --- ADD THE 'REMOVE_USER' ROUTE ---
@@ -891,37 +866,6 @@ def remove_user(user_id):
     flash(f'User {user_to_delete.username} has been removed.')
     return redirect(url_for('admin_dashboard'))
 
-#  --- ADD THE 'ADMIN_SEARCH' ROUTE ---
-
-@app.route('/admin/search')
-def admin_search():
-    # --- SIMPLE AUTH CHECK ---
-    if 'user_id' not in session:
-        flash('Please log in to access this page.')
-        return redirect(url_for('login'))
-    if session.get('role') != 'admin':
-        flash('You do not have permission to access this page.')
-        return redirect(url_for('dashboard'))
-    # --- END OF CHECK ---
-
-    # Get the search query from the URL (e.g., /admin/search?query=test)
-    query = request.args.get('query')
-
-    if not query:
-        flash('Please enter a search term.')
-        return redirect(url_for('admin_dashboard'))
-
-    # Search for patients and doctors using .contains() for partial matching
-    patients = Patient.query.filter(Patient.name.contains(query)).all()
-    doctors = Doctor.query.filter(Doctor.name.contains(query)).all()
-
-    return render_template(
-        'search_results.html', 
-        patients=patients, 
-        doctors=doctors, 
-        query=query
-    )
-
 @app.route('/admin/view_treatment/<int:app_id>')
 def admin_view_treatment(app_id):
     # --- SIMPLE AUTH CHECK ---
@@ -945,6 +889,44 @@ def admin_view_treatment(app_id):
         doctor=doctor,
         treatment=treatment
     )
+
+
+#  --- ADD THE 'ADMIN_SEARCH' ROUTE ---
+
+@app.route('/admin/search')
+def admin_search():
+    # --- SIMPLE AUTH CHECK ---
+    if 'user_id' not in session:
+        flash('Please log in to access this page.')
+        return redirect(url_for('login'))
+    if session.get('role') != 'admin':
+        flash('You do not have permission to access this page.')
+        return redirect(url_for('dashboard'))
+    # --- END OF CHECK ---
+
+    # Get the search query from the URL (e.g., /admin/search?query=test)
+    query = request.args.get('query')
+
+    if not query:
+        flash('Please enter a search term.')
+        return redirect(url_for('admin_dashboard'))
+
+    # Search for patients and doctors using .contains() for partial matching
+    patients = Patient.query.filter(Patient.name.contains(query)).all()
+    doctors = Doctor.query.filter(Doctor.name.contains(query)).all()
+    departments = Department.query.filter(Department.name.contains(query)).all()
+
+    print(f"Departments: {departments}")
+
+    return render_template(
+        'search_results.html', 
+        patients=patients, 
+        doctors=doctors, 
+        departments=departments,
+        query=query
+    )
+
+
 
 
 

@@ -55,4 +55,24 @@
         <p>No patients found matching that name.</p>
     {% endif %}
 
+    <h2>Departments Found ({{ patients|length }})</h2>
+    {% if departments %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for department in departments %}
+                <tr>
+                    <td>{{ department.name }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No departments found matching that name.</p>
+    {% endif %}
+
 {% endblock %}

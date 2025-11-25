@@ -2,8 +2,24 @@
 
 {% block content %}
 <div class="container-fluid">
-    <h1 class="my-4">Admin Dashboard</h1>
 
+    <div class="row my-4">
+        <div class="col-md-6">
+            <h1 class="">Welcome Admin</h1>
+
+        </div>
+        <div class="col-md-6">
+            <form method="GET" action="{{ url_for('admin_search') }}">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Search doctors, patients, departments..." name="query" required>
+                    <button class="btn btn-outline-info" type="submit">Search</button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+    <!-- Stats -->
     <div class="row">
         <div class="col-md-4">
             <div class="card text-white bg-primary mb-3">
@@ -31,70 +47,37 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="container py-5">
+        <div class="row">
+            <h3 class="col-md-10">Registered Doctors</h3>
+            <div class="col-md-2">
+                <form action="{{ url_for('add_doctor') }}">
 
-        <div class="col-md-6">
-            <h3>Add New Doctor</h3>
-            <form method="POST" action="{{ url_for('add_doctor') }}" novalidate>
-                {{ form.hidden_tag() }}
-                <div class="mb-3">
-                    {{ form.name.label(class="form-label") }}
-                    {{ form.name(class="form-control") }}
-                </div>
-                <div class="mb-3">
-                    {{ form.username.label(class="form-label") }}
-                    {{ form.username(class="form-control") }}
-                </div>
-                <div class="mb-3">
-                    {{ form.password.label(class="form-label") }}
-                    {{ form.password(class="form-control") }}
-                </div>
-                <div class="mb-3">
-                    {{ form.department.label(class="form-label") }}
-                    {{ form.department(class="form-select") }}
-                </div>
-                <div class="mb-3">
-                    {{ form.submit(class="btn btn-primary") }}
-                </div>
-            </form>
+                    <button class="btn btn-outline-success" type="submit">Create</button>
+                </form>
+
+            </div>
         </div>
-
-        <div class="col-md-6">
-            <h3>Search</h3>
-            <form method="GET" action="{{ url_for('admin_search') }}">
-                <div class="input-group mb-3">
-                    <input type="text" class="form-control" placeholder="Search doctors or patients..." name="query" required>
-                    <button class="btn btn-outline-secondary" type="submit">Search</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <hr class="my-4">
-
-    <div class="row">
-        <div class="col-md-6">
-            <h3>Registered Doctors ({{ doctor_count }})</h3>
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <!-- <th>Username</th> -->
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for doctor, user in doctors %}
-                    <tr>
-                        <td>{{ doctor.name }}</td>
-                        <!-- <td>{{ user.username }}</td> -->
-                        <td>
-                            <span class="{{ 'text-success' if user.status == 'active' else 'text-danger' }}">
-                                {{ user.status }}
-                            </span>
-                        </td>
-                        <td>
+        <table class="table table-hover" style="table-layout: fixed">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doctor, user in doctors %}
+                <tr>
+                    <td>{{ doctor.name }}</td>
+                    <!-- <td>{{ user.username }}</td> -->
+                    <td>
+                        <span class="{{ 'text-success' if user.status == 'active' else 'text-danger' }}">
+                            {{ user.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <div>
                             <a href="{{ url_for('edit_doctor', doctor_id=doctor.id) }}" 
                             class="btn btn-warning btn-sm">Edit</a>
                             
@@ -111,65 +94,69 @@
                             onclick="return confirm('Are you sure you want to PERMANENTLY remove this user? This cannot be undone.')">
                             Remove
                             </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
 
-        <div class="col-md-6">
-            <h3>Registered Patients ({{ patient_count }})</h3>
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Username</th>
-                        <th>Contact</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for patient, user in patients %}
-                    <tr>
-                        <td>{{ patient.name }}</td>
-                        <td>{{ user.username }}</td>
-                        <td>{{ patient.contact }}</td>
-                        <td>
-                            <span class="{{ 'text-success' if user.status == 'active' else 'text-danger' }}">
-                                {{ user.status }}
-                            </span>
-                        </td>
-                        <td>
-                            <a href="{{ url_for('edit_patient', patient_id=patient.id) }}" 
-                            class="btn btn-warning btn-sm">Edit</a>
-                            
-                            {% if user.status == 'active' %}
-                                <a href="{{ url_for('toggle_blacklist', user_id=user.id) }}" 
-                                class="btn btn-secondary btn-sm">Blacklist</a>
-                            {% else %}
-                                <a href="{{ url_for('toggle_blacklist', user_id=user.id) }}" 
-                                class="btn btn-success btn-sm">Activate</a>
-                            {% endif %}
+                        </div>
 
-                            <a href="{{ url_for('remove_user', user_id=user.id) }}" 
-                            class="btn btn-danger btn-sm"
-                            onclick="return confirm('Are you sure you want to PERMANENTLY remove this user? This cannot be undone.')">
-                            Remove
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <br>
+
+    <div class="container py-5">
+        <h3>Registered Patients</h3>
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for patient, user in patients %}
+                <tr>
+                    <td>{{ patient.name }}</td>
+                    <!-- <td>{{ user.username }}</td>
+                    <td>{{ patient.contact }}</td> -->
+                    <td>
+                        <span class="{{ 'text-success' if user.status == 'active' else 'text-danger' }}">
+                            {{ user.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('edit_patient', patient_id=patient.id) }}" 
+                        class="btn btn-warning btn-sm">Edit</a>
+                        
+                        {% if user.status == 'active' %}
+                            <a href="{{ url_for('toggle_blacklist', user_id=user.id) }}" 
+                            class="btn btn-secondary btn-sm">Blacklist</a>
+                        {% else %}
+                            <a href="{{ url_for('toggle_blacklist', user_id=user.id) }}" 
+                            class="btn btn-success btn-sm">Activate</a>
+                        {% endif %}
+
+                        <a href="{{ url_for('remove_user', user_id=user.id) }}" 
+                        class="btn btn-danger btn-sm"
+                        onclick="return confirm('Are you sure you want to PERMANENTLY remove this user? This cannot be undone.')">
+                        Remove
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 
-    <div class="row mt-4">
+
+    </div>
+
+    <div class="row container py-5">
         <div class="col-12">
-            <h3>All Appointments ({{ appointment_count }})</h3>
-            <table class="table table-striped">
+            <h3>Upcoming Appointments</h3>
+            <table class="table table-hover">
                 <thead>
                     <tr>
                         <th>Patient ID</th>

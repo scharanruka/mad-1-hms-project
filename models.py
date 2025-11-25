@@ -12,6 +12,7 @@ class User(db.Model):
 class Department(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
+    details = db.Column(db.String(100), default="")
 
 class Doctor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -20,6 +21,13 @@ class Doctor(db.Model):
     department_id = db.Column(db.Integer, db.ForeignKey('department.id'), nullable=False)
     
     name = db.Column(db.String(100), nullable=False)
+    # new columns
+    dob = db.Column(db.DateTime, nullable=False)
+    experience = db.Column(db.Integer, nullable=False)
+    specialization = db.Column(db.String(100), nullable=False)
+    qualifications = db.Column(db.String(100), nullable=True)
+
+
     availability = db.Column(db.String(200), default='{}')
 
 
@@ -44,6 +52,10 @@ class Appointment(db.Model):
 class Treatment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     appointment_id = db.Column(db.Integer, db.ForeignKey('appointment.id'), nullable=False)
+
+    # New fields
+    visit_type =  db.Column(db.String(50), default='Routine', nullable=False)
+    test_done = db.Column(db.String(50), nullable=False)
     
-    diagnosis = db.Column(db.Text, nullable=False)
+    diagnosis = db.Column(db.String(100), nullable=False)
     prescription = db.Column(db.Text, nullable=False)
