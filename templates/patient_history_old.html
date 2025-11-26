@@ -1,0 +1,43 @@
+<!-- templates/patient_history.html -->
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="">
+        
+    </div>
+    <h1>Medical History</h1>
+    <p><strong>Patient Name:</strong> {{ patient.name }}<br/>
+    <strong>Contact:</strong> {{ patient.contact }}</p>
+    <a href="{{ url_for('doctor_dashboard') }}" class="btn btn-secondary mb-3">&larr; Back to Dashboard</a>
+
+    <hr>
+
+    {% if not history %}
+        <p>No appointment history found for this patient</p>
+    {% else %}
+        {% for item in history %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <strong>Appointment Date: {{ item.appointment.appointment_date }}</strong>
+                    <span class="badge 
+                        {% if item.appointment.status == 'Completed' %}bg-success
+                        {% elif item.appointment.status == 'Cancelled' %}bg-danger
+                        {% else %}bg-primary
+                        {% endif %}
+                    ">{{ item.appointment.status }}</span>
+                </div>
+                <div class="card-body">
+                    {% if item.treatment %}
+                        <h5 class="card-title">Diagnosis</h5>
+                        <p class="card-text">{{ item.treatment.diagnosis }}</p>
+                        <h5 class="card-title">Prescription</h5>
+                        <p class="card-text">{{ item.treatment.prescription }}</p>
+                    {% else %}
+                        <p>No treatment information recorded for this appointment.</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+{% endblock %}

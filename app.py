@@ -417,7 +417,6 @@ def update_treatment(app_id):
             )
             db.session.add(new_treatment)
         
-        print("Fnished")
         # Mark appointment as completed
         appointment.status = 'Completed'
         db.session.commit()
@@ -446,20 +445,24 @@ def patient_history(patient_id):
     patient = Patient.query.get_or_404(patient_id)
     doctor = Doctor.query.filter_by(user_id=session['user_id']).first()
 
-    # Get all appointments for this patient *with this doctor*
+    # Get all appointments for this patient (all doctors)
     all_appts = Appointment.query.filter_by(
         patient_id=patient.id,
-        doctor_id=doctor.id
+        status="Completed"
     ).all()
 
     # Get the treatment for each appointment
     history = []
     for appt in all_appts:
         treatment = Treatment.query.filter_by(appointment_id=appt.id).first()
+        doctor_treated = Doctor.query.filter_by(id=appt.doctor_id).first()
+        print("Doctor Treated: ", doctor)
         history.append({
             'appointment': appt,
-            'treatment': treatment  # This will be None if not completed
+            'treatment': treatment,  # This will be None if not completed
+            'doctor': doctor
         })
+    print(history)
 
     return render_template(
         'patient_history.html', 

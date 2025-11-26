@@ -1,39 +1,43 @@
-<!-- templates/patient_history.html -->
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Medical History for: {{ patient.name }}</h1>
-    <p><strong>Contact:</strong> {{ patient.contact }}</p>
-    <a href="{{ url_for('doctor_dashboard') }}" class="btn btn-secondary mb-3">&larr; Back to Dashboard</a>
+    <div class="row my-2">
+        <div class="col-11">
+            <h1>Medical History</h1>
+        </div>
+        <a href="{{ url_for('doctor_dashboard') }}" class="btn btn-outline-info mb-3 col-1">back</a>
+    </div>
+    <p><strong>Patient Name:</strong> {{ patient.name }}<br/>
+    <strong>Contact:</strong> {{ patient.contact }}</p>
 
-    <hr>
 
     {% if not history %}
-        <p>No appointment history found for this patient with you.</p>
+        <p>No appointment history found for this patient</p>
     {% else %}
-        {% for item in history %}
-            <div class="card mb-3">
-                <div class="card-header">
-                    <strong>Appointment Date: {{ item.appointment.appointment_date }}</strong>
-                    <span class="badge 
-                        {% if item.appointment.status == 'Completed' %}bg-success
-                        {% elif item.appointment.status == 'Cancelled' %}bg-danger
-                        {% else %}bg-primary
-                        {% endif %}
-                    ">{{ item.appointment.status }}</span>
-                </div>
-                <div class="card-body">
-                    {% if item.treatment %}
-                        <h5 class="card-title">Diagnosis</h5>
-                        <p class="card-text">{{ item.treatment.diagnosis }}</p>
-                        <h5 class="card-title">Prescription</h5>
-                        <p class="card-text">{{ item.treatment.prescription }}</p>
-                    {% else %}
-                        <p>No treatment information recorded for this appointment.</p>
-                    {% endif %}
-                </div>
-            </div>
-        {% endfor %}
+        <table class="table">
+            <thead>
+                <tr>
+                <th scope="col">Visit No.</th>
+                <th scope="col">Visit Type</th>
+                <th scope="col">Test Done</th>
+                <th scope="col">Diagnosis</th>
+                <th scope="col">Prescription</th>
+                <th scope="col">Doctor</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in history %}
+                <tr>
+                    <th scope="row">{{item.appointment.id}}</th>
+                    <td>{{item.treatment.visit_type}}</td>
+                    <td>{{item.treatment.test_done}}</td>
+                    <td>{{item.treatment.diagnosis}}</td>
+                    <td>{{item.treatment.prescription}}</td>
+                    <td>Dr.{{item.doctor.name}}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
     {% endif %}
 
 {% endblock %}

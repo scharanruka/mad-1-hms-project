@@ -4,6 +4,8 @@ from datetime import date, datetime
 
 from models import db, Doctor, Patient, Appointment 
 
+# BASIC API TO ONLY GET DOCTORS, PATIENTS AND APPOINTMENT DATA -------
+
 # Converts a single SQLAlchemy object to a dictionary dynamically
 def serialize_object(obj):
     if obj is None:
@@ -87,3 +89,7 @@ def setup_api_routes(app):
     # Appointment Endpoints
     api.add_resource(AppointmentList, '/appointments')
     api.add_resource(AppointmentDetail, '/appointments/<int:id>')
+
+
+# rohan.161
+# vxPxcigu7L
