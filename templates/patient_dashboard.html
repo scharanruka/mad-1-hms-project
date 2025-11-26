@@ -3,25 +3,30 @@
 {% block content %}
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Patient Dashboard ({{ patient.name }})</h1>
-        <a href="{{ url_for('patient_profile') }}" class="btn btn-outline-primary">
-            Edit My Profile
-        </a>
+        <h3>Patient Dashboard ({{ patient.name }})</h1>
+        
+        <div>
+            <a href="{{ url_for('patient_profile') }}" class="btn btn-outline-primary">
+                Edit My Profile
+            </a>
+            <a href="{{ url_for('patient_history', patient_id=patient.id) }}" class="btn btn-outline-success">
+                History
+            </a>
+        </div>
     </div>
 
     <div class="card mb-4">
         <div class="card-header">
-            <h5>Find a Doctor</h5>
+            <h5>Departments</h5>
         </div>
+        {% for dept in departments %}
         <div class="card-body">
-            <form method="POST" action="" novalidate>
-                {{ search_form.hidden_tag() }}
-                <div class_input-group">
-                    {{ search_form.query(class="form-control", placeholder="Search by name or specialization...") }}
-                    {{ search_form.submit(class="btn btn-primary mt-2") }}
-                </div>
-            </form>
+            <div class="row">
+                <h5>{{dept.name}}</h5>  
+                <a href="" class="btn btn-outline-info">View Details</a>
+            </div>
         </div>
+        {% endfor %}
     </div>
 
     <div class="card mb-4">
@@ -66,38 +71,6 @@
         </div>
     </div>
 
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5>Appointment History</h5>
-        </div>
-        <div class="card-body">
-            {% for item in past_app_data %}
-            <div class="card mb-3">
-                <div class="card-header">
-                    <strong>Dr. {{ item.doctor_name }}</strong> on 
-                    <strong>{{ item.appointment.appointment_date }}</strong>
-                    
-                    <span class="badge 
-                        {% if item.appointment.status == 'Completed' %}bg-success
-                        {% else %}bg-danger
-                        {% endif %}
-                    ">{{ item.appointment.status }}</span>
-                </div>
-                {% if item.treatment %}
-                <div class="card-body">
-                    <h5 class="card-title">Diagnosis</h5>
-                    <p class="card-text">{{ item.treatment.diagnosis }}</p>
-                    <h5 class="card-title">Prescription</h5>
-                    <p class="card-text">{{ item.treatment.prescription }}</p>
-                </div>
-                {% endif %}
-            </div>
-            {% endfor %}
-            {% if not past_app_data %}
-                <p>No past appointments found.</p>
-            {% endif %}
-        </div>
-    </div>
 
 </div>
 {% endblock %}

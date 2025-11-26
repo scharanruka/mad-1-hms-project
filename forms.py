@@ -4,6 +4,8 @@ from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAr
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange
 from models import User # to check for existing usernames
 
+from datetime import datetime, date
+
 class LoginForm(FlaskForm):
     """Form for all users to login."""
     username = StringField('Username', 
@@ -86,6 +88,17 @@ class AddDoctorForm(FlaskForm):
         user = User.query.filter_by(username=username.data).first()
         if user:
             raise ValidationError('That username is already taken.')
+    
+    def validate_dob(self, dob):
+        today = date.today()
+        eighteen_years_ago = today.replace(year=today.year - 18)
+
+
+        if dob.data > today:
+            raise ValidationError("The event date cannot be in the future!")
+        if dob.data > eighteen_years_ago:
+            raise ValidationError("Doctor must be 18 years old!")
+
 
 class EditDoctorForm(FlaskForm):
     """Form for Admin to edit an existing Doctor."""
@@ -150,3 +163,7 @@ class BookAppointmentForm(FlaskForm):
     appointment_slot = SelectField('Select an Available Slot', 
                                    validators=[DataRequired()])
     submit = SubmitField('Book Appointment')
+
+
+# rohan.330
+# Wyz7hLLvUQ

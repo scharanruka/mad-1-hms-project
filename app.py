@@ -166,7 +166,6 @@ def admin_dashboard():
     # Get lists for management
     # doctors = Doctor.query.all()
     doctors = db.session.query(Doctor, User).join(User, Doctor.user_id == User.id).all()
-    # patients = Patient.query.all()
     patients = db.session.query(Patient, User).join(User, Patient.user_id == User.id).all()
     appointments = Appointment.query.filter_by(status="Booked").all()
     departments = Department.query.all()
@@ -433,17 +432,31 @@ def update_treatment(app_id):
     )
 
 
-# 5. --- ADD ROUTE FOR VIEWING A PATIENT'S HISTORY ---
-@app.route('/doctor/patient_history/<int:patient_id>')
+
+@app.route('/patient_history/<int:patient_id>')
 def patient_history(patient_id):
     # --- SIMPLE AUTH CHECK ---
-    if 'user_id' not in session or session.get('role') != 'doctor':
-        flash('Please log in as a doctor.')
+    if 'user_id' not in session or session.get('role') not in ('doctor', 'admin', 'patient'):
+        flash('Unauthorized access')
         return redirect(url_for('login'))
+
+    # Patient checking his own history
+    if session.get('role') == 'patient':
+        try:
+            current_user_id = int(session.get('user_id'))
+            patient = Patient.query.filter_by(id=patient_id).first()
+            print(current_user_id, patient.user_id)
+            if not patient or patient.user_id != current_user_id:
+                raise ValueError
+            
+        except:
+            flash('Unauthorized access')
+            return redirect(url_for('login'))
+
     # --- END OF CHECK ---
 
     patient = Patient.query.get_or_404(patient_id)
-    doctor = Doctor.query.filter_by(user_id=session['user_id']).first()
+    # doctor = Doctor.query.filter_by(user_id=session['user_id']).first()
 
     # Get all appointments for this patient (all doctors)
     all_appts = Appointment.query.filter_by(
@@ -462,7 +475,6 @@ def patient_history(patient_id):
             'treatment': treatment,  # This will be None if not completed
             'doctor': doctor
         })
-    print(history)
 
     return render_template(
         'patient_history.html', 
@@ -476,7 +488,7 @@ def patient_history(patient_id):
 
 # app.py
 
-# 1. --- REPLACE THE EXISTING PATIENT DASHBOARD ROUTE ---
+
 @app.route('/patient/dashboard', methods=['GET', 'POST'])
 def patient_dashboard():
     # --- SIMPLE AUTH CHECK ---
@@ -486,12 +498,8 @@ def patient_dashboard():
     # --- END OF CHECK ---
 
     patient = Patient.query.filter_by(user_id=session['user_id']).first()
-    search_form = SearchDoctorForm()
+    departments = Department.query.all()
 
-    # Handle the search form submission
-    if search_form.validate_on_submit():
-        query = search_form.query.data
-        return redirect(url_for('patient_search_doctors', query=query))
 
     # --- Get Upcoming Appointments ---
     upcoming_appts_query = db.session.query(Appointment, Doctor).join(
@@ -520,17 +528,19 @@ def patient_dashboard():
             'doctor_name': doctor.name,
             'treatment': treatment
         })
+    
+    print("APtientDara: ", patient.id)
 
     return render_template(
         'patient_dashboard.html', 
         patient=patient,
-        search_form=search_form,
+        departments=departments,
         upcoming_appts=upcoming_appts_query, # These are (Appointment, Doctor) tuples
         past_app_data=past_app_data # This is our custom list of dicts
     )
 
 
-# 2. --- ADD NEW ROUTE: PATIENT PROFILE ---
+
 @app.route('/patient/profile', methods=['GET', 'POST'])
 def patient_profile():
     # --- SIMPLE AUTH CHECK ---
@@ -553,7 +563,7 @@ def patient_profile():
     return render_template('patient_profile.html', form=form, patient=patient)
 
 
-# 3. --- ADD NEW ROUTE: SEARCH DOCTORS ---
+
 @app.route('/patient/search')
 def patient_search_doctors():
     # --- SIMPLE AUTH CHECK ---
@@ -580,7 +590,6 @@ def patient_search_doctors():
     return render_template('search_doctors.html', results=search_results, query=query)
 
 
-# 4. --- ADD NEW ROUTE: BOOK APPOINTMENT ---
 @app.route('/patient/book/<int:doctor_id>', methods=['GET', 'POST'])
 def book_appointment(doctor_id):
     # --- SIMPLE AUTH CHECK ---
@@ -653,7 +662,7 @@ def book_appointment(doctor_id):
     )
 
 
-#  --- ADD NEW ROUTE: CANCEL APPOINTMENT ---
+
 @app.route('/patient/cancel/<int:app_id>')
 def patient_cancel_appointment(app_id):
     # --- SIMPLE AUTH CHECK ---
@@ -681,7 +690,7 @@ def patient_cancel_appointment(app_id):
     return redirect(url_for('patient_dashboard'))
 
 
-#  --- ADD NEW ROUTE: RESCHEDULE APPOINTMENT ---
+
 @app.route('/patient/reschedule/<int:app_id>', methods=['GET', 'POST'])
 def patient_reschedule_appointment(app_id):
     # --- SIMPLE AUTH CHECK ---
@@ -751,7 +760,7 @@ def patient_reschedule_appointment(app_id):
     )
 
 
-#  --- ADD THE 'ADD_DOCTOR' ROUTE ---
+
 
 @app.route('/admin/add_doctor', methods=['GET','POST'])
 def add_doctor():
@@ -825,7 +834,6 @@ def add_doctor():
     return render_template('create_doctor.html', form=form)
 
 
-#  --- ADD THE 'REMOVE_USER' ROUTE ---
 
 @app.route('/admin/remove_user/<int:user_id>')
 def remove_user(user_id):
@@ -850,7 +858,6 @@ def remove_user(user_id):
         return redirect(url_for('admin_dashboard'))
 
     # Manually delete the associated profile (Doctor or Patient)
-    # This is necessary because we removed db.relationship
     if user_to_delete.role == 'doctor':
         doctor_profile = Doctor.query.filter_by(user_id=user_id).first()
         if doctor_profile:
@@ -870,6 +877,8 @@ def remove_user(user_id):
 
     flash(f'User {user_to_delete.username} has been removed.')
     return redirect(url_for('admin_dashboard'))
+
+
 
 @app.route('/admin/view_treatment/<int:app_id>')
 def admin_view_treatment(app_id):
@@ -896,7 +905,6 @@ def admin_view_treatment(app_id):
     )
 
 
-#  --- ADD THE 'ADMIN_SEARCH' ROUTE ---
 
 @app.route('/admin/search')
 def admin_search():

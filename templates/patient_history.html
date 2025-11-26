@@ -5,7 +5,7 @@
         <div class="col-11">
             <h1>Medical History</h1>
         </div>
-        <a href="{{ url_for('doctor_dashboard') }}" class="btn btn-outline-info mb-3 col-1">back</a>
+        <button onclick="goBack()" class="btn btn-outline-info mb-3 col-1">back</button>
     </div>
     <p><strong>Patient Name:</strong> {{ patient.name }}<br/>
     <strong>Contact:</strong> {{ patient.contact }}</p>
@@ -39,5 +39,11 @@
             </tbody>
         </table>
     {% endif %}
+
+<script>
+function goBack() {
+  window.history.back();
+}
+</script>
 
 {% endblock %}

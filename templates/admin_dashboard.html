@@ -154,25 +154,26 @@
     </div>
 
     <div class="row container py-5">
-        <div class="col-12">
+        <div class="">
             <h3>Upcoming Appointments</h3>
             <table class="table table-hover">
                 <thead>
                     <tr>
+                        <th>Sr. No</th>
                         <th>Patient ID</th>
                         <th>Doctor ID</th>
-                        <th>Date & Time</th>
-                        <th>Status</th>
-                        <th>Actions</th> </tr>
+                        <th>Patient History</th>
+                    </tr>
                 </thead>
                 <tbody>
                     {% for appt in appointments %}
                     <tr>
+                        <td>{{ appt.id }}</td>
                         <td>{{ appt.patient_id }}</td>
                         <td>{{ appt.doctor_id }}</td>
-                        <td>{{ appt.appointment_date }}</td>
+                        <!-- <td>{{ appt.appointment_date }}</td> -->
                         <td>
-                            <a href="{{ url_for('admin_view_treatment', app_id=appt.id) }}" class="btn btn-info btn-sm">
+                            <a href="{{ url_for('patient_history', patient_id=appt.patient_id) }}" class="btn btn-info btn-sm">
                                 View
                             </a>
                         </td>
