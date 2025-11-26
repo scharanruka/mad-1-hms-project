@@ -30,11 +30,11 @@ def create_db_and_admin():
         if not Department.query.first():
             print("No departments found, creating defaults...")
             default_depts = {
-    'Cardiology': "This department specializes in the diagnosis and treatment of conditions affecting the **heart** and **blood vessels**, such as heart attacks and arrhythmias. They manage patient care using advanced monitoring and surgical procedures.",
-    'Neurology': "Focused on disorders of the **nervous system**, including the brain, spinal cord, and nerves. Neurologists diagnose and treat conditions like strokes, epilepsy, Parkinson's disease, and multiple sclerosis.",
-    'Oncology': "The Oncology department provides care for patients diagnosed with **cancer**. Services include diagnosis, chemotherapy, radiation therapy, and ongoing palliative care for tumor management.",
-    'Orthopedics': "Specializes in the prevention, diagnosis, and treatment of **musculoskeletal** system injuries and diseases. This covers bones, joints, ligaments, tendons, and muscles, often involving surgical repair or replacement.",
-    'Pediatrics': "Dedicated to providing medical care for **infants, children, and adolescents**. Pediatricians manage their unique health, growth, and development needs, from routine check-ups to complex illnesses."
+    'cardiology': "This department specializes in the diagnosis and treatment of conditions affecting the **heart** and **blood vessels**, such as heart attacks and arrhythmias. They manage patient care using advanced monitoring and surgical procedures.",
+    'neurology': "Focused on disorders of the **nervous system**, including the brain, spinal cord, and nerves. Neurologists diagnose and treat conditions like strokes, epilepsy, Parkinson's disease, and multiple sclerosis.",
+    'oncology': "The Oncology department provides care for patients diagnosed with **cancer**. Services include diagnosis, chemotherapy, radiation therapy, and ongoing palliative care for tumor management.",
+    'orthopedics': "Specializes in the prevention, diagnosis, and treatment of **musculoskeletal** system injuries and diseases. This covers bones, joints, ligaments, tendons, and muscles, often involving surgical repair or replacement.",
+    'pediatrics': "Dedicated to providing medical care for **infants, children, and adolescents**. Pediatricians manage their unique health, growth, and development needs, from routine check-ups to complex illnesses."
 }
             
             for dept_name in default_depts:

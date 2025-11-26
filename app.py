@@ -397,7 +397,6 @@ def update_treatment(app_id):
     form = UpdateTreatmentForm()
 
     if form.validate_on_submit(): # POST request
-        print("Form validate")
         # Check if treatment already exists
         existing_treatment = Treatment.query.filter_by(appointment_id=app_id).first()
         if existing_treatment:
@@ -405,7 +404,7 @@ def update_treatment(app_id):
             existing_treatment.diagnosis = form.diagnosis.data
             existing_treatment.prescription = form.prescription.data
         else:
-            print("new")
+
             # Create new
             new_treatment = Treatment(
                 appointment_id=app_id,
@@ -445,7 +444,6 @@ def patient_history(patient_id):
         try:
             current_user_id = int(session.get('user_id'))
             patient = Patient.query.filter_by(id=patient_id).first()
-            print(current_user_id, patient.user_id)
             if not patient or patient.user_id != current_user_id:
                 raise ValueError
             
@@ -469,7 +467,6 @@ def patient_history(patient_id):
     for appt in all_appts:
         treatment = Treatment.query.filter_by(appointment_id=appt.id).first()
         doctor_treated = Doctor.query.filter_by(id=appt.doctor_id).first()
-        print("Doctor Treated: ", doctor)
         history.append({
             'appointment': appt,
             'treatment': treatment,  # This will be None if not completed
@@ -528,8 +525,7 @@ def patient_dashboard():
             'doctor_name': doctor.name,
             'treatment': treatment
         })
-    
-    print("APtientDara: ", patient.id)
+
 
     return render_template(
         'patient_dashboard.html', 
@@ -777,7 +773,7 @@ def add_doctor():
     
 
     departments = Department.query.all()
-    form.department.choices = [(d.id, d.name) for d in departments]
+    form.department.choices = [(d.id, str(d.name).capitalize()) for d in departments]
 
     if form.validate_on_submit():
         # Get data from the form
@@ -929,7 +925,6 @@ def admin_search():
     doctors = Doctor.query.filter(Doctor.name.contains(query)).all()
     departments = Department.query.filter(Department.name.contains(query)).all()
 
-    print(f"Departments: {departments}")
 
     return render_template(
         'search_results.html', 
@@ -939,8 +934,20 @@ def admin_search():
         query=query
     )
 
+# DEPARTMENT DETAILS ----------
+@app.route('/departments/<string:department_name>')
+def department_details(department_name):
+    dept = Department.query.filter_by(name=department_name).first_or_404()
+    doctors = Doctor.query.filter_by(department_id=dept.id).all()
+    
+    return render_template('department_details.html', department=dept, doctors=doctors)
 
-
+@app.route('/doctor/profile/<int:doctor_id>')
+def doctor_public_profile(doctor_id):
+    doctor = Doctor.query.get_or_404(doctor_id)
+    department = Department.query.filter_by(id=doctor.department_id).first()
+    
+    return render_template('doctor_details.html', doctor=doctor, department=department)
 
 
 # --- Main run block ---

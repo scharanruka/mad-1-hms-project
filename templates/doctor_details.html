@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Doctor Profile</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center mb-3">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" fill="currentColor" class="bi bi-person-circle text-secondary" viewBox="0 0 16 16">
+                                <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                                <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
+                            </svg>
+                        </div>
+                        <div class="col-md-8">
+                            <h2 class="card-title">Dr. {{ doctor.name }}</h2>
+                            <h5 class="text-primary">{{ department.name }} Department</h5>
+                            <p class="text-muted fw-bold">{{ doctor.qualification }}</p>
+                            
+                            <hr>
+                            
+                            <h5>About</h5>
+                            <!-- <p class="card-text">{{ doctor.bio }}</p> -->
+
+                            <hr>
+                            
+                            <div class="d-grid gap-2 d-md-block">
+                                <a href="{{ url_for('book_appointment', doctor_id=doctor.id) }}" class="btn btn-success btn-lg">Book Now</a>
+                                <a href="{{ url_for('department_details', department_name=department.name) }}" class="btn btn-secondary btn-lg">Back to Department</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

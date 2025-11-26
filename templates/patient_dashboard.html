@@ -22,8 +22,9 @@
         {% for dept in departments %}
         <div class="card-body">
             <div class="row">
-                <h5>{{dept.name}}</h5>  
-                <a href="" class="btn btn-outline-info">View Details</a>
+                <h5 class="col-10">{{dept.name | capitalize }}</h5>  
+                <a href="{{url_for('department_details', department_name=dept.name)}}" class="btn btn-outline-info col-2">View Details</a>
+                <hr/>
             </div>
         </div>
         {% endfor %}

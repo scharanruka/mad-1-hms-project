@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="p-5 mb-4 bg-light rounded-3">
+        <div class="container-fluid py-2">
+            <h1 class="display-5 fw-bold text-primary">{{ department.name | capitalize }}</h1>
+            <p class="col-md-8 fs-4 mt-3">
+                {{ department.details or "Dedicated to providing top-tier medical care in this specialization." }}
+            </p>
+            <a href="{{ url_for('patient_dashboard') }}" class="btn btn-outline-secondary mt-3">&larr; Back to Dashboard</a>
+        </div>
+    </div>
+
+    <h3 class="mb-4">Our Specialists</h3>
+
+    {% if not doctors %}
+        <div class="alert alert-info">No doctors are currently listed for this department.</div>
+    {% else %}
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            {% for doctor in doctors %}
+            <div class="col">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-person-circle text-secondary" viewBox="0 0 16 16">
+                                <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                                <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
+                            </svg>
+                        </div>
+                        <h5 class="card-title">Dr. {{ doctor.name }}</h5>
+                        <p class="text-muted">{{ doctor.qualification }}</p>
+                        
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('book_appointment', doctor_id=doctor.id) }}" class="btn btn-primary">Book Appointment</a>
+                            <a href="{{ url_for('doctor_public_profile', doctor_id=doctor.id) }}" class="btn btn-outline-info">View Details</a>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
