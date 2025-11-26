@@ -10,6 +10,8 @@ from forms import (LoginForm, RegistrationForm, AddDoctorForm,
 
 import os
 
+from api import setup_api_routes
+
 import json
 from datetime import date, timedelta
 from sqlalchemy import or_
@@ -25,7 +27,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'mysecretkey'
 
 db.init_app(app)
-
+setup_api_routes(app)
 
 
 # ROUTES ------------------------------------
