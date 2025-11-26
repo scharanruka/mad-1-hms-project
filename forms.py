@@ -6,6 +6,8 @@ from models import User # to check for existing usernames
 
 from datetime import datetime, date
 
+# Using WTForms for both form and backend validation
+
 class LoginForm(FlaskForm):
     """Form for all users to login."""
     username = StringField('Username', 
