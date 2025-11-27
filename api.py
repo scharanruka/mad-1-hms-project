@@ -89,7 +89,3 @@ def setup_api_routes(app):
     # Appointment Endpoints
     api.add_resource(AppointmentList, '/appointments')
     api.add_resource(AppointmentDetail, '/appointments/<int:id>')
-
-
-# rohan.161
-# vxPxcigu7L
