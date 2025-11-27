@@ -40,7 +40,7 @@ def index():
 # AUTH ROUTES -------------------------
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    form = LoginForm() # WTForm
+    form = LoginForm() 
 
     if form.validate_on_submit():
         username = form.username.data
@@ -49,6 +49,10 @@ def login():
         user = User.query.filter_by(username=username).first()
 
         if user and check_password_hash(user.password, password):
+            if user.status == "blacklisted":
+                flash("Your account has been blacklisted!")
+                return redirect(url_for('login')) 
+
             session['user_id'] = user.id
             session['role'] = user.role
             
@@ -112,8 +116,7 @@ def register():
         flash('Registration successful! Please log in.')
         return redirect(url_for('login'))
 
-    # If form is not valid (or it's a GET request), render the template
-    # The form object will pass any validation errors to the template
+
     return render_template('register.html', form=form)
 #-------------------------------------------------------------------
 
@@ -198,7 +201,7 @@ def edit_doctor(doctor_id):
     form = EditDoctorForm(obj=doctor)
     
     # Populate department choices
-    form.department.choices = [(d.id, d.name) for d in Department.query.all()]
+    form.department.choices = [(d.id, str(d.name).capitalize()) for d in Department.query.all()]
     
     if form.validate_on_submit():
         # Update the doctor's data
@@ -208,7 +211,7 @@ def edit_doctor(doctor_id):
         flash('Doctor details updated successfully.')
         return redirect(url_for('admin_dashboard'))
 
-    # On a GET request, pre-select the doctor's current department
+
     if request.method == 'GET':
         form.department.data = doctor.department_id
 
@@ -278,13 +281,13 @@ def doctor_dashboard():
         flash('Doctor profile not found.')
         return redirect(url_for('logout'))
 
-    # Tab 1: Get upcoming appointments
+
     upcoming_appointments = Appointment.query.filter_by(
         doctor_id=doctor.id, 
         status='Booked'
     ).all()
     
-    # Get Patient names for these appointments
+
     upcoming_app_data = []
     for appt in upcoming_appointments:
         patient = Patient.query.get(appt.patient_id)
@@ -293,7 +296,7 @@ def doctor_dashboard():
             'patient_name': patient.name if patient else 'Unknown'
         })
 
-    # Tab 2: Get all "Assigned Patients" (patients this doctor has seen)
+ 
     all_appts = Appointment.query.filter_by(doctor_id=doctor.id).all()
     patient_ids = {a.patient_id for a in all_appts} # Use a set for unique IDs
     assigned_patients = Patient.query.filter(Patient.id.in_(patient_ids)).all()
@@ -305,7 +308,7 @@ def doctor_dashboard():
         assigned_patients=assigned_patients
     )
 
-# 2. --- ADD ROUTE FOR AVAILABILITY (GET AND POST) ---
+
 @app.route('/doctor/availability', methods=['GET', 'POST'])
 def doctor_availability():
     # --- SIMPLE AUTH CHECK ---
@@ -319,7 +322,7 @@ def doctor_availability():
 
     # Generate the next 7 days
     today = date.today()
-    # We store the dates as strings in 'YYYY-MM-DD' format
+    # 'YYYY-MM-DD' format
     days = [(today + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)]
 
     if form.validate_on_submit(): # This is a POST request
@@ -352,7 +355,7 @@ def doctor_availability():
     return render_template('doctor_availability.html', form=form, days=days)
 
 
-# 3. --- ADD ROUTE FOR CANCELLING AN APPOINTMENT ---
+
 @app.route('/doctor/cancel_appointment/<int:app_id>')
 def cancel_appointment(app_id):
     # --- SIMPLE AUTH CHECK ---
@@ -375,7 +378,7 @@ def cancel_appointment(app_id):
     return redirect(url_for('doctor_dashboard'))
 
 
-# 4. --- ADD ROUTE FOR UPDATING TREATMENT (GET AND POST) ---
+
 @app.route('/doctor/update_treatment/<int:app_id>', methods=['GET', 'POST'])
 def update_treatment(app_id):
     # --- SIMPLE AUTH CHECK ---
@@ -463,6 +466,8 @@ def patient_history(patient_id):
         status="Completed"
     ).all()
 
+    print(all_appts)
+
     # Get the treatment for each appointment
     history = []
     for appt in all_appts:
@@ -471,7 +476,7 @@ def patient_history(patient_id):
         history.append({
             'appointment': appt,
             'treatment': treatment,  # This will be None if not completed
-            'doctor': doctor
+            'doctor': doctor_treated
         })
 
     return render_template(
@@ -483,9 +488,6 @@ def patient_history(patient_id):
 # ------------------------------------------------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------------------------------------------------
 # PATIENT DASHBOARD ----------
-
-# app.py
-
 
 @app.route('/patient/dashboard', methods=['GET', 'POST'])
 def patient_dashboard():
@@ -532,8 +534,8 @@ def patient_dashboard():
         'patient_dashboard.html', 
         patient=patient,
         departments=departments,
-        upcoming_appts=upcoming_appts_query, # These are (Appointment, Doctor) tuples
-        past_app_data=past_app_data # This is our custom list of dicts
+        upcoming_appts=upcoming_appts_query, 
+        past_app_data=past_app_data 
     )
 
 
@@ -598,13 +600,12 @@ def book_appointment(doctor_id):
     doctor = Doctor.query.get_or_404(doctor_id)
     form = BookAppointmentForm()
 
-    # --- Generate available slots ---
+
     # Load the doctor's availability from the JSON string
     avail_dict = json.loads(doctor.availability or '{}')
     
     # Get existing appointments for this doctor to check for conflicts
     existing_appts = Appointment.query.filter_by(doctor_id=doctor.id).all()
-    # Create a set of "YYYY-MM-DD am" or "YYYY-MM-DD pm" strings for fast lookup
     booked_slots = {f"{appt.appointment_date}" for appt in existing_appts}
 
     slot_choices = []
@@ -713,10 +714,9 @@ def patient_reschedule_appointment(app_id):
     avail_dict = json.loads(doctor.availability or '{}')
     existing_appts = Appointment.query.filter_by(doctor_id=doctor.id).all()
     
-    # Create set of booked slots, BUT *exclude* the current appointment
     booked_slots = {
         f"{appt.appointment_date}" for appt in existing_appts 
-        if appt.id != appointment.id # Allow picking the *same* slot
+        if appt.id != appointment.id # Allow picking the same slot
     }
     
     slot_choices = []
@@ -914,7 +914,7 @@ def admin_search():
         return redirect(url_for('dashboard'))
     # --- END OF CHECK ---
 
-    # Get the search query from the URL (e.g., /admin/search?query=test)
+
     query = request.args.get('query')
 
     if not query:

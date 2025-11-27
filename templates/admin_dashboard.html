@@ -1,213 +1,205 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid py-4">
 
-    <div class="row my-4">
-        <div class="col-md-6">
-            <h1 class="">Welcome Admin</h1>
-
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h1 class="fw-bold text-primary mb-0">Welcome Admin</h1>
+            <p class="text-muted mb-0">Manage your hospital operations</p>
         </div>
-        <div class="col-md-6">
+        <div class="w-100 w-md-50" style="max-width: 500px;">
             <form method="GET" action="{{ url_for('admin_search') }}">
-                <div class="input-group">
-                    <input type="text" class="form-control" placeholder="Search doctors, patients, departments..." name="query" required>
-                    <button class="btn btn-outline-info" type="submit">Search</button>
+                <div class="input-group shadow-sm">
+                    <input type="text" class="form-control border-end-0" placeholder="Search doctors, patients..." name="query" required>
+                    <button class="btn btn-info text-white border-start-0" type="submit">
+                        <i class="bi bi-search"></i> Search
+                    </button>
                 </div>
             </form>
         </div>
-
     </div>
 
-    <!-- Stats -->
-    <div class="row">
-        <div class="col-md-4">
-            <div class="card text-white bg-primary mb-3">
-                <div class="card-header">Total Doctors</div>
+    <div class="row row-cols-1 row-cols-md-3 g-4 mb-5">
+        <div class="col">
+            <div class="card text-white bg-primary shadow-sm h-100 border-0">
+                <div class="card-header bg-transparent border-0 fw-bold">Total Doctors</div>
                 <div class="card-body">
-                    <h5 class="card-title">{{ doctor_count }}</h5>
+                    <h2 class="card-title display-6">{{ doctor_count }}</h2>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card text-white bg-success mb-3">
-                <div class="card-header">Total Patients</div>
+        <div class="col">
+            <div class="card text-white bg-success shadow-sm h-100 border-0">
+                <div class="card-header bg-transparent border-0 fw-bold">Total Patients</div>
                 <div class="card-body">
-                    <h5 class="card-title">{{ patient_count }}</h5>
+                    <h2 class="card-title display-6">{{ patient_count }}</h2>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card text-white bg-info mb-3">
-                <div class="card-header">Total Appointments</div>
+        <div class="col">
+            <div class="card text-white bg-info shadow-sm h-100 border-0">
+                <div class="card-header bg-transparent border-0 fw-bold">Total Appointments</div>
                 <div class="card-body">
-                    <h5 class="card-title">{{ appointment_count }}</h5>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mb-4">
-        <div class="col-md-6 offset-md-3">
-            <div class="card">
-                <div class="card-header">Hospital Overview</div>
-                <div class="card-body">
-                    <canvas id="adminChart"></canvas>
+                    <h2 class="card-title display-6">{{ appointment_count }}</h2>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="container py-5">
-        <div class="row">
-            <h3 class="col-md-10">Registered Doctors</h3>
-            <div class="col-md-2">
-                <form action="{{ url_for('add_doctor') }}">
 
-                    <button class="btn btn-outline-success" type="submit">Create</button>
-                </form>
+    <div class="card shadow-sm border-0 mb-5">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 text-primary fw-bold">Registered Doctors</h5>
+            <form action="{{ url_for('add_doctor') }}">
+                <button class="btn btn-success btn-sm d-flex align-items-center" type="submit">
+                    <i class="bi bi-plus-lg me-1"></i> Create New
+                </button>
+            </form>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Name</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for doctor, user in doctors %}
+                        <tr>
+                            <td class="ps-4 fw-bold text-secondary">Dr. {{ doctor.name }}</td>
+                            <td>
+                                <span class="badge {{ 'bg-success' if user.status == 'active' else 'bg-danger' }}">
+                                    {{ user.status|capitalize }}
+                                </span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="d-flex justify-content-end gap-1 flex-wrap">
+                                    <a href="{{ url_for('edit_doctor', doctor_id=doctor.id) }}" class="btn btn-warning btn-sm">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </a>
+                                    
+                                    {% if user.status == 'active' %}
+                                        <a href="{{ url_for('toggle_blacklist', user_id=user.id) }}" class="btn btn-secondary btn-sm">
+                                            <i class="bi bi-slash-circle"></i> Blacklist
+                                        </a>
+                                    {% else %}
+                                        <a href="{{ url_for('toggle_blacklist', user_id=user.id) }}" class="btn btn-success btn-sm">
+                                            <i class="bi bi-check-circle"></i> Activate
+                                        </a>
+                                    {% endif %}
 
+                                    <a href="{{ url_for('remove_user', user_id=user.id) }}" 
+                                       class="btn btn-danger btn-sm"
+                                       onclick="return confirm('Are you sure you want to PERMANENTLY remove this user? This cannot be undone.')">
+                                       <i class="bi bi-trash"></i> Remove
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-        <table class="table table-hover" style="table-layout: fixed">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for doctor, user in doctors %}
-                <tr>
-                    <td>{{ doctor.name }}</td>
-                    <!-- <td>{{ user.username }}</td> -->
-                    <td>
-                        <span class="{{ 'text-success' if user.status == 'active' else 'text-danger' }}">
-                            {{ user.status }}
-                        </span>
-                    </td>
-                    <td>
-                        <div>
-                            <a href="{{ url_for('edit_doctor', doctor_id=doctor.id) }}" 
-                            class="btn btn-warning btn-sm">Edit</a>
-                            
-                            {% if user.status == 'active' %}
-                                <a href="{{ url_for('toggle_blacklist', user_id=user.id) }}" 
-                                class="btn btn-secondary btn-sm">Blacklist</a>
-                            {% else %}
-                                <a href="{{ url_for('toggle_blacklist', user_id=user.id) }}" 
-                                class="btn btn-success btn-sm">Activate</a>
-                            {% endif %}
-
-                            <a href="{{ url_for('remove_user', user_id=user.id) }}" 
-                            class="btn btn-danger btn-sm"
-                            onclick="return confirm('Are you sure you want to PERMANENTLY remove this user? This cannot be undone.')">
-                            Remove
-                            </a>
-
-                        </div>
-
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    <br>
-
-    <div class="container py-5">
-        <h3>Registered Patients</h3>
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for patient, user in patients %}
-                <tr>
-                    <td>{{ patient.name }}</td>
-                    <!-- <td>{{ user.username }}</td>
-                    <td>{{ patient.contact }}</td> -->
-                    <td>
-                        <span class="{{ 'text-success' if user.status == 'active' else 'text-danger' }}">
-                            {{ user.status }}
-                        </span>
-                    </td>
-                    <td>
-                        <a href="{{ url_for('edit_patient', patient_id=patient.id) }}" 
-                        class="btn btn-warning btn-sm">Edit</a>
-                        
-                        {% if user.status == 'active' %}
-                            <a href="{{ url_for('toggle_blacklist', user_id=user.id) }}" 
-                            class="btn btn-secondary btn-sm">Blacklist</a>
-                        {% else %}
-                            <a href="{{ url_for('toggle_blacklist', user_id=user.id) }}" 
-                            class="btn btn-success btn-sm">Activate</a>
-                        {% endif %}
-
-                        <a href="{{ url_for('remove_user', user_id=user.id) }}" 
-                        class="btn btn-danger btn-sm"
-                        onclick="return confirm('Are you sure you want to PERMANENTLY remove this user? This cannot be undone.')">
-                        Remove
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
     </div>
 
+    <div class="card shadow-sm border-0 mb-5">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 text-primary fw-bold">Registered Patients</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Name</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for patient, user in patients %}
+                        <tr>
+                            <td class="ps-4 fw-bold text-secondary">{{ patient.name }}</td>
+                            <td>
+                                <span class="badge {{ 'bg-success' if user.status == 'active' else 'bg-danger' }}">
+                                    {{ user.status|capitalize }}
+                                </span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="d-flex justify-content-end gap-1 flex-wrap">
+                                    <a href="{{ url_for('edit_patient', patient_id=patient.id) }}" class="btn btn-warning btn-sm">
+                                        <i class="bi bi-pencil"></i> Edit
+                                    </a>
+                                    
+                                    {% if user.status == 'active' %}
+                                        <a href="{{ url_for('toggle_blacklist', user_id=user.id) }}" class="btn btn-secondary btn-sm">
+                                            <i class="bi bi-slash-circle"></i> Blacklist
+                                        </a>
+                                    {% else %}
+                                        <a href="{{ url_for('toggle_blacklist', user_id=user.id) }}" class="btn btn-success btn-sm">
+                                            <i class="bi bi-check-circle"></i> Activate
+                                        </a>
+                                    {% endif %}
 
-    </div>
-
-    <div class="row container py-5">
-        <div class="">
-            <h3>Upcoming Appointments</h3>
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Sr. No</th>
-                        <th>Patient ID</th>
-                        <th>Doctor ID</th>
-                        <th>Patient History</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for appt in appointments %}
-                    <tr>
-                        <td>{{ appt.id }}</td>
-                        <td>{{ appt.patient_id }}</td>
-                        <td>{{ appt.doctor_id }}</td>
-                        <!-- <td>{{ appt.appointment_date }}</td> -->
-                        <td>
-                            <a href="{{ url_for('patient_history', patient_id=appt.patient_id) }}" class="btn btn-info btn-sm">
-                                View
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                                    <a href="{{ url_for('remove_user', user_id=user.id) }}" 
+                                       class="btn btn-danger btn-sm"
+                                       onclick="return confirm('Are you sure you want to PERMANENTLY remove this user? This cannot be undone.')">
+                                       <i class="bi bi-trash"></i> Remove
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="mb-0 text-primary fw-bold">Upcoming Appointments</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Sr. No</th>
+                            <th>Patient ID</th>
+                            <th>Doctor ID</th>
+                            <th>Patient History</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appt in appointments %}
+                        <tr>
+                            <td class="ps-4">{{ appt.id }}</td>
+                            <td>{{ appt.patient_id }}</td>
+                            <td>{{ appt.doctor_id }}</td>
+                            <td>
+                                <a href="{{ url_for('patient_history', patient_id=appt.patient_id) }}" class="btn btn-outline-info btn-sm">
+                                    <i class="bi bi-clock-history"></i> History
+                                </a>
+                            </td>
+                             <td>
+                                <a href="{{ url_for('admin_view_treatment', app_id=appt.id) }}" class="btn btn-info btn-sm text-white">
+                                    <i class="bi bi-eye"></i> View Details
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
 </div>
-<script>
-    const ctx = document.getElementById('adminChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'doughnut', // 'bar', 'pie', 'line'
-        data: {
-            labels: ['Doctors', 'Patients', 'Appointments'],
-            datasets: [{
-                label: 'Total Count',
-                data: {{[doctor_count, patient_count, appointment_count] | tojson}} ,
-                backgroundColor: ['#0d6efd', '#198754', '#0dcaf0'],
-                hoverOffset: 4
-            }]
-        }
-    });
-</script>
 {% endblock %}
