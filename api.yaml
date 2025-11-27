@@ -1,0 +1,197 @@
+openapi: 3.0.0
+info:
+  title: ApexCare HMS API
+  description: API for retrieving hospital data including doctors, patients, and appointments.
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000/api
+    description: Local Development Server
+
+paths:
+  # --- DOCTOR ENDPOINTS ---
+  /doctors:
+    get:
+      summary: Get all doctors
+      description: Retrieve a list of all registered doctors.
+      responses:
+        '200':
+          description: A list of doctors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Doctor'
+
+  /doctors/{id}:
+    get:
+      summary: Get a specific doctor
+      description: Retrieve details of a specific doctor by their ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the doctor to retrieve
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Doctor details found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doctor'
+        '404':
+          description: Doctor not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # --- PATIENT ENDPOINTS ---
+  /patients:
+    get:
+      summary: Get all patients
+      description: Retrieve a list of all registered patients.
+      responses:
+        '200':
+          description: A list of patients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Patient'
+
+  /patients/{id}:
+    get:
+      summary: Get a specific patient
+      description: Retrieve details of a specific patient by their ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the patient
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Patient details found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+        '404':
+          description: Patient not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # --- APPOINTMENT ENDPOINTS ---
+  /appointments:
+    get:
+      summary: Get all appointments
+      description: Retrieve a list of all appointments.
+      responses:
+        '200':
+          description: A list of appointments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Appointment'
+
+  /appointments/{id}:
+    get:
+      summary: Get a specific appointment
+      description: Retrieve details of a specific appointment by its ID.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the appointment
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Appointment details found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Appointment'
+        '404':
+          description: Appointment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Doctor:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Dr. Gregory House"
+        user_id:
+          type: integer
+          example: 101
+        department_id:
+          type: integer
+          example: 5
+        qualification:
+          type: string
+          example: "MD, Nephrology"
+        availability:
+          type: string
+          description: JSON string representing available slots
+          example: "{\"2025-11-20\": [\"am\", \"pm\"]}"
+
+    Patient:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "John Doe"
+        contact:
+          type: string
+          example: "john@example.com"
+        user_id:
+          type: integer
+          example: 202
+
+    Appointment:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        doctor_id:
+          type: integer
+          example: 1
+        patient_id:
+          type: integer
+          example: 1
+        appointment_date:
+          type: string
+          example: "2025-11-20 am"
+        status:
+          type: string
+          enum: [Booked, Completed, Cancelled]
+          example: "Booked"
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Resource not found"

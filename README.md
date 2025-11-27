@@ -5,7 +5,8 @@
 - [Features](#features)
 - [Technologies Used](#technologies-used)
 - [Installation](#installation)
-- [Usage](#usage)
+- [ER Diagram](#er-diagram)
+- [AI Usage Declaration](#ai-usage-declaration)
 
 ## Introduction
 The Hospital Management System (ApexCare) is designed to streamline the operational flows of a modern healthcare facility. Developed as part of IITM BS Degree's Modern Application Development I (MAD-I) course, the application facilitates seamless interaction between three key people: Administrators, Doctors, and Patients.
