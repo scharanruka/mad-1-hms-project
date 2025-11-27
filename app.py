@@ -119,6 +119,7 @@ def register():
 
 
 # Dashboard Routes -------------------------
+#Using role based auth to restrisct and protect sessions
 @app.route('/dashboard')
 def dashboard():
     """
@@ -454,7 +455,7 @@ def patient_history(patient_id):
     # --- END OF CHECK ---
 
     patient = Patient.query.get_or_404(patient_id)
-    # doctor = Doctor.query.filter_by(user_id=session['user_id']).first()
+    doctor = Doctor.query.filter_by(user_id=session['user_id']).first()
 
     # Get all appointments for this patient (all doctors)
     all_appts = Appointment.query.filter_by(

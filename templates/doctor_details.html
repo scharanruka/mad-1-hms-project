@@ -18,15 +18,11 @@
                         </div>
                         <div class="col-md-8">
                             <h2 class="card-title">Dr. {{ doctor.name }}</h2>
-                            <h5 class="text-primary">{{ department.name }} Department</h5>
-                            <p class="text-muted fw-bold">{{ doctor.qualification }}</p>
-                            
-                            <hr>
-                            
-                            <h5>About</h5>
-                            <!-- <p class="card-text">{{ doctor.bio }}</p> -->
+                            <h5 class="text-primary">{{ department.name | capitalize }} Department</h5>
+                            <p class="text-muted fw-bold">{{ doctor.qualifications }}
 
-                            <hr>
+                            <p class="text-muted fw-medium">{{ doctor.experience }} Years of Medical Experience</p>
+                            <p class="text-muted fw-medium">Specialization: {{ doctor.specialization }}</p>
                             
                             <div class="d-grid gap-2 d-md-block">
                                 <a href="{{ url_for('book_appointment', doctor_id=doctor.id) }}" class="btn btn-success btn-lg">Book Now</a>

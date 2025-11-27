@@ -47,6 +47,17 @@
         </div>
     </div>
 
+    <div class="row mb-4">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header">Hospital Overview</div>
+                <div class="card-body">
+                    <canvas id="adminChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="container py-5">
         <div class="row">
             <h3 class="col-md-10">Registered Doctors</h3>
@@ -184,4 +195,19 @@
         </div>
     </div>
 </div>
+<script>
+    const ctx = document.getElementById('adminChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut', // 'bar', 'pie', 'line'
+        data: {
+            labels: ['Doctors', 'Patients', 'Appointments'],
+            datasets: [{
+                label: 'Total Count',
+                data: {{[doctor_count, patient_count, appointment_count] | tojson}} ,
+                backgroundColor: ['#0d6efd', '#198754', '#0dcaf0'],
+                hoverOffset: 4
+            }]
+        }
+    });
+</script>
 {% endblock %}
