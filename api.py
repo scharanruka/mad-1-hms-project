@@ -79,13 +79,13 @@ def setup_api_routes(app):
     api = Api(app, prefix='/api')
 
     # Doctor Endpoints
-    api.add_resource(DoctorList, '/doctors')
+    api.add_resource(DoctorList, '/doctors/')
     api.add_resource(DoctorDetail, '/doctors/<int:id>')
 
     # Patient Endpoints
-    api.add_resource(PatientList, '/patients')
+    api.add_resource(PatientList, '/patients/')
     api.add_resource(PatientDetail, '/patients/<int:id>')
 
     # Appointment Endpoints
-    api.add_resource(AppointmentList, '/appointments')
+    api.add_resource(AppointmentList, '/appointments/')
     api.add_resource(AppointmentDetail, '/appointments/<int:id>')
